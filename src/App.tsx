@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Layout } from './components/Layout';
@@ -30,26 +30,33 @@ import MoodAnalytics from './pages/admin/MoodAnalytics';
 import RiskMonitoring from './pages/admin/RiskMonitoring';
 import StudentOverview from './pages/admin/StudentOverview';
 
+import Reports from './pages/admin/Reports';
+
 // Admin (Super Admin) Dashboard
 import { AdminDashboardLayout } from './pages/superadmin/AdminDashboardLayout';
 import AdminDashboardHome from './pages/superadmin/AdminDashboardHome';
 import ManageStaff from './pages/superadmin/ManageStaff';
 import SystemLogs from './pages/superadmin/SystemLogs';
 
+const MobileLayout = () => (
+  <div className="app-container">
+    <Outlet />
+  </div>
+);
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <Router basename="/mindguard">
-          <div className="app-container">
-            <Routes>
-              {/* Public Routes */}
+          <Routes>
+            {/* Student and Public Routes - wrapped in mobile container */}
+            <Route element={<MobileLayout />}>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
-              {/* Student Protected Routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
               <Route path="/chat" element={<ProtectedRoute><Layout><Chat /></Layout></ProtectedRoute>} />
               <Route path="/wellness" element={<ProtectedRoute><Layout><Wellness /></Layout></ProtectedRoute>} />
@@ -60,6 +67,7 @@ function App() {
               <Route path="/resources" element={<ProtectedRoute><Layout><ResourceLibrary /></Layout></ProtectedRoute>} />
               <Route path="/emergency" element={<ProtectedRoute><Layout><Emergency /></Layout></ProtectedRoute>} />
               <Route path="/affirmations" element={<ProtectedRoute><Layout><Affirmations /></Layout></ProtectedRoute>} />
+            </Route>
 
               {/* Staff Dashboard (staff and admin can both view) */}
               <Route path="/staff" element={<StaffRoute><StaffLayout /></StaffRoute>}>
@@ -68,7 +76,7 @@ function App() {
                 <Route path="mood-analytics" element={<MoodAnalytics />} />
                 <Route path="risk-monitoring" element={<RiskMonitoring />} />
                 <Route path="student-overview" element={<StudentOverview />} />
-                <Route path="reports" element={<StudentOverview />} />
+                <Route path="reports" element={<Reports />} />
               </Route>
 
               {/* Admin (Super Admin) Dashboard — admin only */}
@@ -84,7 +92,6 @@ function App() {
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </div>
         </Router>
       </AuthProvider>
     </ThemeProvider>

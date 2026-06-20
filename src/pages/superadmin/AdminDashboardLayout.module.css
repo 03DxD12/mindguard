@@ -1,0 +1,280 @@
+.adminContainer {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: #f8fafc;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 0;
+  flex-shrink: 0;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.brand {
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.brandHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.brandTitle {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.brandSubtitle {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.7rem;
+  margin: 0;
+}
+
+.nav {
+  margin-top: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.75rem 1.5rem;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  width: 100%;
+  text-align: left;
+}
+
+.navLink:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.activeLink {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: #6366f1;
+}
+
+.sidebarFooter {
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.userInfo {
+  padding: 0.5rem 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.userName {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.userEmail {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.7rem;
+}
+
+.logoutBtn {
+  color: #f87171 !important;
+}
+
+.logoutBtn:hover {
+  background-color: rgba(248, 113, 113, 0.1);
+}
+
+/* Main Area */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.topbar {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbarTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.topbarSubtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow: auto;
+}
+
+.footer {
+  padding: 1rem 2rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* Base Styles Ensure Responsiveness */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+/* Responsive Overrides */
+/* Laptop/Tablet */
+@media screen and (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+  }
+}
+
+/* Mobile */
+@media screen and (max-width: 768px) {
+  .adminContainer {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 60px;
+    flex-direction: row;
+    padding: 0;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .brand, .sidebarFooter {
+    display: none;
+  }
+
+  .nav {
+    flex-direction: row;
+    margin: 0;
+    justify-content: space-around;
+    width: 100%;
+  }
+
+  .navLink {
+    flex-direction: column;
+    padding: 8px 0;
+    font-size: 0.65rem;
+    gap: 4px;
+    border-left: none;
+    border-top: 3px solid transparent;
+    text-align: center;
+    color: #a5b4fc;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .activeLink {
+    border-left: none;
+    border-top-color: #6366f1;
+    background-color: transparent;
+    color: #fff;
+  }
+
+  .main {
+    margin-bottom: 60px; /* Space for bottom nav */
+  }
+
+  .topbar {
+    padding: 1rem;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  .kpiGrid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    /* hide scrollbar */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .kpiGrid::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Target KPI cards inside the horizontal scroller */
+  .kpiGrid > div {
+    flex: 0 0 85%;
+    scroll-snap-align: center;
+    min-width: 0;
+  }
+}

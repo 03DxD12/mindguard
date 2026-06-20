@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { MdPeople, MdWarning, MdHistory, MdShield } from 'react-icons/md';
+import layoutStyles from './AdminDashboardLayout.module.css';
 
 const cardStyle: React.CSSProperties = {
   background: '#fff',
@@ -45,7 +46,7 @@ export default function AdminDashboardHome() {
         <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '4px' }}>Real-time admin control panel summary</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+      <div className={layoutStyles.kpiGrid}>
         {stats.map((s, i) => (
           <div key={i} style={cardStyle}>
             <div style={iconBoxStyle(s.color)}>

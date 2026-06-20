@@ -65,6 +65,26 @@ export const Wellness: React.FC = () => {
         </div>
       </Card>
 
+      <h4 className="font-bold text-gray-700 mt-2">Suggested For You</h4>
+      <Card className="grid grid-cols-2 gap-3">
+        <a href="https://www.youtube.com/watch?v=inpok4MKVLM" target="_blank" rel="noreferrer" className="flex flex-col items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+          <span className="text-2xl mb-1">🎵</span>
+          <span className="text-sm font-medium text-center">Calming Music</span>
+        </a>
+        <a href="https://www.mindful.org/meditation/mindfulness-getting-started/" target="_blank" rel="noreferrer" className="flex flex-col items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+          <span className="text-2xl mb-1">📖</span>
+          <span className="text-sm font-medium text-center">Mindfulness Guide</span>
+        </a>
+        <a href="https://www.youtube.com/results?search_query=funny+animal+videos" target="_blank" rel="noreferrer" className="flex flex-col items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+          <span className="text-2xl mb-1">🐶</span>
+          <span className="text-sm font-medium text-center">Funny Animals</span>
+        </a>
+        <a href="https://greatergood.berkeley.edu/article/item/how_to_start_a_gratitude_practice" target="_blank" rel="noreferrer" className="flex flex-col items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+          <span className="text-2xl mb-1">✍️</span>
+          <span className="text-sm font-medium text-center">Gratitude</span>
+        </a>
+      </Card>
+
       <h4 className="font-bold text-gray-700 mt-2">Mood History</h4>
       <Card>
         {moods.length === 0 ? (

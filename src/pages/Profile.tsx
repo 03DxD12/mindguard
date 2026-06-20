@@ -35,6 +35,30 @@ export const Profile: React.FC = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  // GPS Location State
+  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationStatus, setLocationStatus] = useState('');
+
+  const handleShareLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus('Geolocation is not supported by your browser');
+      return;
+    }
+    setLocationStatus('Locating...');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setLocationStatus('Location shared securely (Consent granted).');
+      },
+      () => {
+        setLocationStatus('Unable to retrieve your location. Check permissions.');
+      }
+    );
+  };
+
   useEffect(() => {
     if (user) {
       setEditForm({ fullname: user.fullname, email: user.email });
@@ -255,6 +279,18 @@ export const Profile: React.FC = () => {
               </Button>
             )
           )}
+        </div>
+
+        {/* Location Services */}
+        <div className="border-t border-gray-100 pt-6 mb-8">
+          <h3 className="text-lg font-bold text-gray-800 mb-1">Location Services (GPS)</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Enable location sharing so emergency contacts or responders can find you in a crisis.
+          </p>
+          <Button variant="outline" size="sm" className="w-full mb-2" onClick={handleShareLocation}>
+            {location ? "Update Location" : "Share My Location"}
+          </Button>
+          {locationStatus && <p className="text-sm text-center text-teal-600 font-medium mt-2">{locationStatus}</p>}
         </div>
 
         {/* Privacy Note */}

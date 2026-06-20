@@ -7,8 +7,12 @@ import styles from "./layout/AdminLayout.module.css";
 
 interface Student {
   session_id: string;
+  user_id: number;
+  user_email: string;
+  student_id: string;
+  fullname: string;
   latest_mood: string;
-  risk_level: number;
+  highest_risk_level: number;
   alert: boolean;
   action: string;
   last_interaction: string;
@@ -57,15 +61,17 @@ export default function StudentTable() {
 
   const filteredStudents = students
     .filter(student =>
-      student.session_id.toLowerCase().includes(search.toLowerCase())
+      (student.session_id || "").toLowerCase().includes(search.toLowerCase()) ||
+      (student.fullname || "").toLowerCase().includes(search.toLowerCase()) ||
+      (student.student_id || "").toLowerCase().includes(search.toLowerCase())
     )
     .filter(student =>
-      riskFilter === "all" ? true : student.risk_level === Number(riskFilter)
+      riskFilter === "all" ? true : student.highest_risk_level === Number(riskFilter)
     )
     .sort((a, b) =>
       sortOrder === "desc"
-        ? b.risk_level - a.risk_level
-        : a.risk_level - b.risk_level
+        ? (b.highest_risk_level || 0) - (a.highest_risk_level || 0)
+        : (a.highest_risk_level || 0) - (b.highest_risk_level || 0)
     );
 
   return (
@@ -75,7 +81,7 @@ export default function StudentTable() {
       <div className={styles.tableFilters}>
         <input
           type="text"
-          placeholder="Search by Session ID..."
+          placeholder="Search by Session ID, Name, or Student ID..."
           className={styles.filterInput}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -109,6 +115,8 @@ export default function StudentTable() {
           <thead>
             <tr>
               <th>Session ID</th>
+              <th>Full Name</th>
+              <th>Student ID</th>
               <th>Latest Mood</th>
               <th>Risk Level</th>
               <th>Crisis Alert</th>
@@ -118,9 +126,9 @@ export default function StudentTable() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem" }}>Loading student data...</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>Loading student data...</td></tr>
             ) : filteredStudents.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem" }}>No matching records found.</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>No matching records found.</td></tr>
             ) : (
               filteredStudents.map((student) => {
                 let formattedDate = student.last_interaction;
@@ -130,10 +138,14 @@ export default function StudentTable() {
 
                 return (
                   <tr key={student.session_id}>
-                    <td style={{ fontWeight: 500 }}>{student.session_id}</td>
-                    <td>{student.latest_mood}</td>
+                    <td style={{ fontWeight: 500, fontFamily: "monospace", fontSize: "0.8rem", color: "#64748b" }}>
+                      {student.session_id.substring(0, 8)}...
+                    </td>
+                    <td style={{ fontWeight: 600, color: "#1e293b" }}>{student.fullname !== "N/A" ? student.fullname : "Anonymous"}</td>
+                    <td style={{ fontWeight: 500, color: "#475569" }}>{student.student_id !== "N/A" ? student.student_id : "—"}</td>
+                    <td>{student.latest_mood || "—"}</td>
                     <td>
-                      <RiskBadge level={student.risk_level} />
+                      <RiskBadge level={student.highest_risk_level || 0} />
                     </td>
                     <td style={{ color: student.alert ? "#ef4444" : "#10b981", fontWeight: student.alert ? "bold" : "normal" }}>
                       {student.alert ? "Triggered" : "No"}
@@ -164,11 +176,14 @@ export default function StudentTable() {
             return (
               <div key={student.session_id} className={styles.mobileStudentCard}>
                 <div className={styles.mobileCardHeader}>
-                  <span className={styles.mobileCardId}>{student.session_id}</span>
-                  <RiskBadge level={student.risk_level} />
+                  <span className={styles.mobileCardId}>{student.fullname !== 'N/A' ? student.fullname : student.session_id.substring(0, 8)}</span>
+                  <RiskBadge level={student.highest_risk_level || 0} />
                 </div>
                 <div className={styles.mobileCardRow}>
-                  <span><strong>Mood:</strong> {student.latest_mood}</span>
+                  <span><strong>ID:</strong> {student.student_id !== 'N/A' ? student.student_id : '—'}</span>
+                </div>
+                <div className={styles.mobileCardRow}>
+                  <span><strong>Mood:</strong> {student.latest_mood || "—"}</span>
                   <span style={{ color: student.alert ? "#ef4444" : "#10b981", fontWeight: student.alert ? "bold" : "normal" }}>
                     {student.alert ? "Alert Active" : "No Alert"}
                   </span>
