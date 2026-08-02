@@ -4,3 +4,9 @@ sentence-transformers
 scikit-learn
 sqlalchemy
 pydantic
+tensorflow
+nltk
+rapidfuzz
+bcrypt
+numpy
+torch

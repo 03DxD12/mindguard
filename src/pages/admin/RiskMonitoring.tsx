@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, Legend
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, Legend, CartesianGrid
 } from "recharts";
 import { MdDownload, MdWarningAmber } from "react-icons/md";
 import styles from "./layout/AdminLayout.module.css";
@@ -9,16 +9,20 @@ import AlertsPanel from "./AlertsPanel";
 
 export default function RiskMonitoring() {
   const [riskData, setRiskData] = useState<any[]>([]);
+  const [trendData, setTrendData] = useState<any[]>([]);
   const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const [riskRes, alertRes] = await Promise.all([
+      const [riskRes, trendRes, alertRes] = await Promise.all([
         axios.get("/api/admin/risk-analytics"),
+        axios.get("/api/admin/risk-trends"),
         axios.get("/api/admin/alerts")
       ]);
       
@@ -29,21 +33,15 @@ export default function RiskMonitoring() {
         { name: "Level 2 - Soft Crisis", count: rData.level_2 || 0, color: "#f97316" },
         { name: "Level 3 - High Crisis", count: rData.level_3 || 0, color: "#ef4444" }
       ]);
+      setTrendData(trendRes.data);
       setAlerts(alertRes.data);
     } catch (err) {
       console.error("Failed to fetch risk data", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Mock trend data
-  const trendData = [
-    { name: 'Week 1', level_2: 4, level_3: 1 },
-    { name: 'Week 2', level_2: 3, level_3: 2 },
-    { name: 'Week 3', level_2: 5, level_3: 0 },
-    { name: 'Week 4', level_2: 2, level_3: 1 },
-  ];
-
-  // Custom label for Pie Chart
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -64,18 +62,12 @@ export default function RiskMonitoring() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1e293b", margin: 0 }}>
-          Risk Monitoring
+          Risk Monitoring & Early Detection
         </h2>
         <div style={{ display: "flex", gap: "1rem" }}>
-          <select className={styles.filterSelect}>
-            <option>All Alerts</option>
-            <option>High Risk Only</option>
-            <option>Critical Only</option>
-          </select>
-          <select className={styles.filterSelect}>
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
-          </select>
+          <button className={styles.reviewBtn} style={{ display: "flex", alignItems: "center", gap: "0.5rem", height: '42px', backgroundColor: "#fff", border: '1px solid #e2e8f0' }} onClick={fetchData}>
+            <FaSync className={loading ? "spin" : ""} /> Refresh
+          </button>
           <button className={styles.reviewBtn} style={{ display: "flex", alignItems: "center", gap: "0.5rem", backgroundColor: "#ffedd5", color: "#ea580c" }}>
             <MdDownload /> Export Risk Log
           </button>
@@ -87,30 +79,29 @@ export default function RiskMonitoring() {
           <MdWarningAmber size={24} color="#dc2626" />
           <div>
             <h4 style={{ margin: 0, fontWeight: "bold" }}>Critical Alert Activity Detected</h4>
-            <p style={{ margin: 0, fontSize: "0.875rem", marginTop: "0.25rem" }}>One or more students have triggered a high-risk alert recently. Please review the Alert Log below and dispatch immediate outreach if necessary.</p>
+            <p style={{ margin: 0, fontSize: "0.875rem", marginTop: "0.25rem" }}>AI has identified students with signs of severe distress. Deployment of counselor outreach recommended.</p>
           </div>
         </div>
       )}
 
-      <div className={styles.chartsGrid} style={{ marginBottom: "2rem" }}>
-        {/* Donut Chart */}
-        <div className={styles.chartContainer}>
-          <h3 className={styles.chartTitle}>Risk Level Distribution</h3>
-          <ResponsiveContainer width="100%" height="85%">
+      <div className={styles.chartsGrid} style={{ marginBottom: "2rem", display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+        <div className={styles.chartContainer} style={{ background: '#fff', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <h3 className={styles.chartTitle} style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem', fontWeight: '600' }}>RISK DISTRIBUTION (ENTIRE CAMPUS)</h3>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={riskData}
                 cx="50%"
                 cy="50%"
-                innerRadius={70}
-                outerRadius={110}
-                paddingAngle={2}
+                innerRadius={60}
+                outerRadius={90}
+                paddingAngle={5}
                 dataKey="count"
                 labelLine={false}
                 label={renderCustomizedLabel}
               >
-                {riskData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {riskData.map((d, index) => (
+                  <Cell key={`cell-${index}`} fill={d.color} />
                 ))}
               </Pie>
               <Tooltip />
@@ -119,16 +110,17 @@ export default function RiskMonitoring() {
           </ResponsiveContainer>
         </div>
 
-        {/* Horizontal Bar Chart Trend */}
-        <div className={styles.chartContainer}>
-          <h3 className={styles.chartTitle}>30-Day Risk Trends (L2 & L3)</h3>
-          <ResponsiveContainer width="100%" height="85%">
-            <BarChart data={trendData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" />
+        <div className={styles.chartContainer} style={{ background: '#fff', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <h3 className={styles.chartTitle} style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem', fontWeight: '600' }}>ESCALATION TRENDS (LAST 30 DAYS)</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={trendData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="date" />
+              <YAxis />
               <Tooltip />
-              <Bar dataKey="level_2" name="Soft Crisis (L2)" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="level_3" name="High Crisis (L3)" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} />
+              <Legend />
+              <Bar dataKey="level_2" name="Soft Crisis (L2)" stackId="a" fill="#f97316" />
+              <Bar dataKey="level_3" name="High Crisis (L3)" stackId="a" fill="#ef4444" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -138,3 +130,7 @@ export default function RiskMonitoring() {
     </div>
   );
 }
+
+// Add FaSync import at the top
+import { FaSync } from "react-icons/fa";
+

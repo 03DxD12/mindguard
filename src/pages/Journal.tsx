@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaBook, FaTrash, FaPlus, FaTimes, FaHeart } from 'react-icons/fa';
+import { FaBook, FaTrash, FaPlus, FaTimes, FaHeart, FaMagic, FaLightbulb } from 'react-icons/fa';
 import { AnimatedItem } from '../components/AnimatedItem';
+import { JournalService, JournalEntry, WeeklyReflection } from '../services/journal';
+import { useAuth } from '../context/AuthContext';
 import styles from './Journal.module.css';
-
-interface JournalEntry {
-  id: string;
-  text: string;
-  date: string;
-  mood?: string;
-}
 
 const PROMPTS = [
   "Take a deep breath. Write as little or as much as you need...",
@@ -28,29 +23,39 @@ const MOODS = [
 ];
 
 export const Journal: React.FC = () => {
+  const { user } = useAuth();
+  const userId = user?.id || 0;
+
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [reflection, setReflection] = useState<WeeklyReflection | null>(null);
   const [currentText, setCurrentText] = useState('');
   const [isWriting, setIsWriting] = useState(false);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [currentPrompt, setCurrentPrompt] = useState(PROMPTS[0]);
   const [showSaveMessage, setShowSaveMessage] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Load entries from localStorage on mount
   useEffect(() => {
-    const savedEntries = localStorage.getItem('mindguard_journal_entries');
-    if (savedEntries) {
-      try {
-        setEntries(JSON.parse(savedEntries));
-      } catch (e) {
-        console.error("Failed to parse journal entries", e);
-      }
+    if (userId) {
+      loadData();
     }
-  }, []);
+  }, [userId]);
 
-  // Save entries to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('mindguard_journal_entries', JSON.stringify(entries));
-  }, [entries]);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [history, aiReflection] = await Promise.all([
+        JournalService.getEntries(userId),
+        JournalService.getWeeklyReflection(userId)
+      ]);
+      setEntries(history);
+      setReflection(aiReflection);
+    } catch (e) {
+      console.error("Failed to load journal data", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStartWriting = () => {
     setCurrentPrompt(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
@@ -58,28 +63,34 @@ export const Journal: React.FC = () => {
     setShowSaveMessage(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentText.trim() && !selectedMood) return;
 
-    const newEntry: JournalEntry = {
-      id: Date.now().toString(),
-      text: currentText.trim(),
-      date: new Date().toLocaleString(),
-      mood: selectedMood || undefined
-    };
-
-    setEntries([newEntry, ...entries]);
-    setCurrentText('');
-    setSelectedMood(null);
-    setIsWriting(false);
-    
-    // Show encouraging feedback
-    setShowSaveMessage(true);
-    setTimeout(() => setShowSaveMessage(false), 4000);
+    try {
+      const newEntry = await JournalService.saveEntry(userId, currentText.trim(), selectedMood || undefined);
+      setEntries([newEntry, ...entries]);
+      setCurrentText('');
+      setSelectedMood(null);
+      setIsWriting(false);
+      
+      setShowSaveMessage(true);
+      setTimeout(() => setShowSaveMessage(false), 4000);
+      
+      // Refresh reflection
+      const aiReflection = await JournalService.getWeeklyReflection(userId);
+      setReflection(aiReflection);
+    } catch (e) {
+      console.error("Failed to save entry", e);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setEntries(entries.filter(entry => entry.id !== id));
+  const handleDelete = async (id: number) => {
+    try {
+      await JournalService.deleteEntry(userId, id);
+      setEntries(entries.filter(entry => entry.id !== id));
+    } catch (e) {
+      console.error("Failed to delete entry", e);
+    }
   };
 
   return (
@@ -90,14 +101,34 @@ export const Journal: React.FC = () => {
         </div>
         <div className={styles.headerText}>
           <h2>Private Sanctuary</h2>
-          <p>Your feelings matter. Only you can see this.</p>
+          <p>Your feelings matter. AI-powered reflections inside.</p>
         </div>
       </header>
+
+      {reflection && reflection.has_reflection && (
+        <AnimatedItem delay={0.2}>
+          <div className={styles.reflectionCard}>
+            <div className={styles.reflectionHeader}>
+              <FaMagic className={styles.magicIcon} />
+              <h4>AI Weekly Reflection</h4>
+            </div>
+            <p className={styles.reflectionSummary}>{reflection.summary}</p>
+            <div className={styles.reflectionFooter}>
+              <div className={styles.themes}>
+                {reflection.themes.map(t => <span key={t} className={styles.themeBadge}>#{t}</span>)}
+              </div>
+              <div className={styles.recommendation}>
+                <FaLightbulb /> {reflection.recommendation}
+              </div>
+            </div>
+          </div>
+        </AnimatedItem>
+      )}
 
       {showSaveMessage && (
         <div className={styles.saveFeedback}>
           <FaHeart className={styles.heartIcon} />
-          You did well sharing today. Thank you for expressing yourself.
+          You did well sharing today. AI has analyzed your themes for your reflection.
         </div>
       )}
 
@@ -165,7 +196,9 @@ export const Journal: React.FC = () => {
       )}
 
       <div className={styles.entriesList}>
-        {entries.length === 0 && !isWriting ? (
+        {loading ? (
+          <div className={styles.emptyState}><p>Loading your sanctuary...</p></div>
+        ) : entries.length === 0 && !isWriting ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}><FaBook /></div>
             <p>Your journal is currently empty.</p>
@@ -178,7 +211,7 @@ export const Journal: React.FC = () => {
                 <div className={styles.entryHeader}>
                   <div className={styles.entryMeta}>
                     {entry.mood && <span className={styles.entryMood}>{entry.mood}</span>}
-                    <span className={styles.entryDate}>{entry.date}</span>
+                    <span className={styles.entryDate}>{new Date(entry.date).toLocaleString()}</span>
                   </div>
                   <button 
                     className={styles.deleteBtn}
@@ -193,6 +226,11 @@ export const Journal: React.FC = () => {
                     {entry.text}
                   </div>
                 )}
+                {entry.themes && entry.themes.length > 0 && (
+                  <div className={styles.entryThemes}>
+                    {entry.themes.map(t => <span key={t}>#{t}</span>)}
+                  </div>
+                )}
               </div>
             </AnimatedItem>
           ))
@@ -200,8 +238,9 @@ export const Journal: React.FC = () => {
       </div>
 
       <div className={styles.crisisFooter}>
-        <p>Need immediate support? <button className={styles.crisisLink} onClick={() => alert("Please contact Hopeline at 0917-558-4673 or the DSWD at 02-8735-1370. You are not alone.")}>Tap here for emergency resources.</button></p>
+        <p>Need immediate support? <button className={styles.crisisLink} onClick={() => alert("Please contact emergency resources. You are not alone.")}>Tap here for emergency resources.</button></p>
       </div>
     </div>
   );
 };
+

@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -19,6 +19,8 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     sessions = relationship("ChatSession", back_populates="user")
+    mood_logs = relationship("MoodLog", back_populates="user", cascade="all, delete-orphan")
+    journal_entries = relationship("JournalEntry", back_populates="user", cascade="all, delete-orphan")
 
 
 class ChatSession(Base):
@@ -84,3 +86,66 @@ class SavedAffirmation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
+
+
+# ─── NEW MODELS ────────────────────────────────────────────────────────────
+
+class MoodLog(Base):
+    """Server-side mood tracking — replaces localStorage-only approach."""
+    __tablename__ = "mood_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    mood = Column(String(50), nullable=False)       # Great, Good, Okay, Down, Crisis
+    value = Column(Integer, nullable=False)           # 1=Crisis, 2=Down, 3=Okay, 4=Good, 5=Great
+    note = Column(Text, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="mood_logs")
+
+
+class JournalEntry(Base):
+    """Server-side journal entries with AI analysis metadata."""
+    __tablename__ = "journal_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    text = Column(Text, nullable=False)
+    mood = Column(String(50), nullable=True)          # Emoji or label
+    themes_json = Column(Text, nullable=True)         # JSON array of detected themes
+    risk_indicators = Column(Text, nullable=True)     # JSON array of risk signals
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="journal_entries")
+
+
+class DailyAffirmationHistory(Base):
+    """Tracks which affirmations have been shown to prevent repetition."""
+    __tablename__ = "daily_affirmation_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    affirmation_text = Column(String(500), nullable=False)
+    mood_category = Column(String(50), nullable=True)
+    shown_date = Column(DateTime, default=datetime.utcnow)
+
+
+class AIDecisionLog(Base):
+    """Responsible AI — logs all AI predictions and escalations."""
+    __tablename__ = "ai_decision_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String(100), nullable=False, index=True)
+    user_message_hash = Column(String(64), nullable=True)  # Anonymized
+    ml_intent = Column(String(100), nullable=True)
+    ml_confidence = Column(Float, nullable=True)
+    semantic_intent = Column(String(100), nullable=True)
+    semantic_confidence = Column(Float, nullable=True)
+    fused_intent = Column(String(100), nullable=True)
+    emotion_detected = Column(String(100), nullable=True)
+    risk_rule_score = Column(Integer, nullable=True)
+    risk_ml_score = Column(Float, nullable=True)
+    risk_semantic_score = Column(Float, nullable=True)
+    risk_dl_score = Column(Float, nullable=True)
+    final_risk_level = Column(Integer, nullable=True)
+    action_taken = Column(String(255), nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)

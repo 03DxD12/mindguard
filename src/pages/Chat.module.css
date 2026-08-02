@@ -146,6 +146,100 @@
   opacity: 0.7;
 }
 
+.system {
+  align-self: center;
+  max-width: 90%;
+}
+
+.system .bubble {
+  background: #fff5f5;
+  color: #c53030;
+  border: 1px solid #feb2b2;
+  text-align: center;
+  font-size: 14px;
+}
+
+.crisis .bubble {
+  background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+  border-left: 4px solid #e53e3e;
+  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.1);
+  animation: pulse-border 2s infinite;
+}
+
+.crisisActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.moodSelector {
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(to bottom, var(--primary-light-alpha), transparent);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.moodSelector h4 {
+  margin-bottom: 16px;
+  color: var(--primary-dark);
+}
+
+.moodGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.moodBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.moodBtn:hover {
+  background: var(--primary-light-alpha);
+  transform: translateY(-2px);
+}
+
+.moodBtnActive {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.moodEmoji {
+  font-size: 24px;
+}
+
+.moodLabel {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.reasoning {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-style: italic;
+  opacity: 0.6;
+}
+
+@keyframes pulse-border {
+  0% { border-color: #e53e3e; }
+  50% { border-color: #feb2b2; }
+  100% { border-color: #e53e3e; }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -154,16 +248,5 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes bounce {
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
   }
 }

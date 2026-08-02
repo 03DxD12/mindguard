@@ -11,14 +11,19 @@ export const ChatService = {
     return sid;
   },
 
-  async sendMessage(message: string, history: ChatMessage[]): Promise<{ response: string; sentiment: string; action?: string }> {
+  async sendMessage(
+    message: string, 
+    history: string[], 
+    turn: number = 0, 
+    mood: string = 'Okay'
+  ): Promise<{ 
+    response: string; 
+    sentiment: string; 
+    action?: string;
+    reasoning?: any;
+    session_id?: string;
+  }> {
     try {
-      // Prepare history in the format Python expects (list of dicts)
-      const formattedHistory = history.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -26,8 +31,10 @@ export const ChatService = {
         },
         body: JSON.stringify({ 
           message,
-          history: history.map(h => h.content), 
-          session_id: ChatService.getSessionId()
+          history, 
+          session_id: ChatService.getSessionId(),
+          turn,
+          mood
         }),
       });
 
@@ -39,7 +46,6 @@ export const ChatService = {
       return data;
     } catch (error) {
       console.error('Chat API Error:', error);
-      // Fallback for demo if backend isn't running
       return {
         response: "I'm having trouble connecting to my empathy engine right now. Please ensure the Python backend is running.",
         sentiment: "neutral",

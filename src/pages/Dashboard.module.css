@@ -94,6 +94,59 @@
   color: var(--primary);
 }
 
+.iconBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.avatarPlaceholder {
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.affirmationPreview {
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #f0fdf4, #ffffff);
+  border: 1px solid #dcfce7;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.affirmationPreview:hover {
+  transform: translateY(-2px);
+}
+
+.affirmationHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.affirmationText {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  font-style: italic;
+  line-height: 1.4;
+  margin: 0;
+}
+
 .emergencyCard {
   background: #ffebee;
   border-left: 4px solid var(--alert);

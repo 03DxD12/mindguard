@@ -1,83 +1,287 @@
+"""
+MindGuard Semantic Intelligence Module
+=======================================
+Provides sentence-transformer embeddings, emotion anchor matching,
+and cosine-similarity helpers for the main AI pipeline.
+"""
+
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-import random
+import numpy as np
+import logging
 
-# Layer 1: Understanding Layer (Model)
-print("Loading sentence transformer model... this may take a moment.")
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-print("Model loaded.")
+logger = logging.getLogger(__name__)
 
-INTENTS = [
-    "stress",
-    "anxiety",
-    "sadness",
-    "crisis",
-    "casual"
-]
+# ─── Layer 1: Semantic Understanding Model ─────────────────────────────────
+logger.info("Loading sentence transformer model (all-MiniLM-L6-v2)...")
+semantic_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+logger.info("Sentence transformer model loaded successfully.")
 
-# Layer 2: Response Layer (Curated empathy)
-RESPONSES = {
-    "stress": [
-        "I'm here with you. Do you want to talk about what's overwhelming you?",
-        "That sounds heavy. What's been stressing you the most lately?"
-    ],
-    "anxiety": [
-        "That sounds difficult. Want to tell me what's making you anxious?",
-        "Anxiety can feel very isolating, but I'm here. Take your time."
-    ],
-    "sadness": [
-        "I'm really sorry you're feeling this way. You don't have to go through it alone.",
-        "It's okay to feel sad. I'm here to listen to whatever is on your mind."
-    ],
-    "casual": [
-        "I'm here. What's on your mind?",
-        "How is everything going today?"
-    ],
-    "crisis": [
-        "Please let someone know you're hurting."
-    ]
+# ─── Emotion Anchor Embeddings ─────────────────────────────────────────────
+# Pre-computed embeddings for 35+ emotional states used for semantic matching.
+# When a user message arrives, we compare its embedding against these anchors
+# to detect emotional state even without explicit keywords.
+
+EMOTION_ANCHORS = {
+    # Level 0 — Normal / Positive
+    "happy": "I feel happy and content with my life right now",
+    "motivated": "I am feeling motivated and ready to achieve my goals",
+    "relaxed": "I feel calm and relaxed, everything is peaceful",
+    "grateful": "I am grateful for the good things in my life",
+    "hopeful": "I feel hopeful about the future and what is ahead",
+    "confident": "I feel confident and strong in myself",
+
+    # Level 1 — Mild Distress
+    "stressed": "I am feeling stressed and pressured by everything",
+    "frustrated": "I am frustrated and annoyed by my situation",
+    "anxious": "I feel anxious and worried about things",
+    "nervous": "I am nervous and uneasy about what might happen",
+    "irritable": "I feel irritable and easily upset today",
+    "restless": "I feel restless and cannot settle down",
+    "academic_pressure": "I am overwhelmed by school work and deadlines",
+
+    # Level 2 — Moderate Distress
+    "sad": "I feel sad and down, nothing makes me happy anymore",
+    "lonely": "I feel completely alone and isolated from everyone",
+    "exhausted": "I am emotionally and physically exhausted and drained",
+    "overwhelmed": "I feel overwhelmed and cannot handle everything anymore",
+    "burnout": "I am burned out and have no energy or motivation left",
+    "worthless": "I feel worthless and not good enough for anything",
+    "grief": "I am grieving and the pain of loss is unbearable",
+    "insecure": "I feel insecure and hate everything about myself",
+    "numb": "I feel numb and empty inside, nothing matters",
+    "trapped": "I feel trapped with no way out of my situation",
+
+    # Level 3 — High Risk / Crisis
+    "hopeless": "I have lost all hope and see no reason to continue",
+    "suicidal": "I want to end my life and stop all this pain",
+    "self_harm": "I want to hurt myself to make the pain stop",
+    "despair": "I am in complete despair and cannot go on",
+    "giving_up": "I have given up on everything and everyone",
+    "abandoned": "Everyone has abandoned me and I am completely alone",
+    "crisis_overwhelm": "I cannot take this anymore I just want everything to stop",
 }
 
-# Risk Scoring Mapping
-RISK_SCORES = {
-    "casual": 0,
-    "stress": 1,
-    "anxiety": 1,
-    "sadness": 2,
-    "crisis": 3
+# Risk level mapping for each anchor
+ANCHOR_RISK_LEVELS = {
+    "happy": 0, "motivated": 0, "relaxed": 0, "grateful": 0, "hopeful": 0, "confident": 0,
+    "stressed": 1, "frustrated": 1, "anxious": 1, "nervous": 1, "irritable": 1,
+    "restless": 1, "academic_pressure": 1,
+    "sad": 2, "lonely": 2, "exhausted": 2, "overwhelmed": 2, "burnout": 2,
+    "worthless": 2, "grief": 2, "insecure": 2, "numb": 2, "trapped": 2,
+    "hopeless": 3, "suicidal": 3, "self_harm": 3, "despair": 3,
+    "giving_up": 3, "abandoned": 3, "crisis_overwhelm": 3,
 }
 
-# Layer 3: Safety Layer (Non-negotiable)
-CRISIS_KEYWORDS = ["suicide", "kill myself", "hurt myself", "end my life", "want to die", "worthless"]
+# Pre-compute anchor embeddings at startup
+_anchor_texts = list(EMOTION_ANCHORS.values())
+_anchor_keys = list(EMOTION_ANCHORS.keys())
+_anchor_embeddings = semantic_model.encode(_anchor_texts, show_progress_bar=False)
 
-def detect_crisis(text: str) -> bool:
-    text_lower = text.lower()
-    return any(word in text_lower for word in CRISIS_KEYWORDS)
+# ─── Intent Anchor Embeddings ──────────────────────────────────────────────
+# Used for semantic intent classification alongside TF-IDF
 
-def get_chat_response(user_input: str):
-    # Safety Override First
-    if detect_crisis(user_input):
-        return {
-            "reply": "You're not alone. Please contact a trusted person or a professional immediately. You deserve support.",
-            "intent": "crisis",
-            "risk_level": 3
+INTENT_ANCHORS = {
+    "academic_stress": [
+        "I am stressed about my exams and grades",
+        "My thesis is overwhelming me, I cannot finish it",
+        "Too many assignments and deadlines to handle",
+        "I am failing my subjects and feel terrible",
+    ],
+    "relationship_issues": [
+        "My partner and I broke up and I am devastated",
+        "I am having problems in my romantic relationship",
+        "Trust issues with my boyfriend or girlfriend",
+    ],
+    "family_conflict": [
+        "My parents fight all the time and I am scared",
+        "There is tension and conflict in my family",
+        "My family does not understand me at all",
+    ],
+    "financial_stress": [
+        "I cannot pay my tuition and I am worried about money",
+        "Financial problems are making it hard to focus on school",
+    ],
+    "loneliness": [
+        "I feel alone and have no real friends",
+        "Nobody talks to me and I feel invisible",
+        "I eat alone and feel isolated from everyone",
+    ],
+    "burnout": [
+        "I am completely burned out and exhausted",
+        "I have no energy or motivation left for anything",
+        "I have been working so hard and I feel empty inside",
+    ],
+    "general_anxiety": [
+        "I have panic attacks and constant worry",
+        "I am always anxious even when nothing is wrong",
+        "My anxiety is through the roof and I cannot sleep",
+    ],
+    "depression_grief": [
+        "I lost someone I love and cannot move on",
+        "Everything feels dark and hopeless",
+        "I have not left my bed in days, everything is heavy",
+    ],
+    "self_esteem": [
+        "I hate how I look and feel ugly and worthless",
+        "I am not good enough for anything or anyone",
+        "Everyone is better and smarter than me",
+    ],
+    "career_anxiety": [
+        "I do not know what to do with my life after college",
+        "I am scared I will not find a job after graduation",
+    ],
+    "bullying": [
+        "People are spreading rumors about me at school",
+        "I am being bullied and harassed by classmates",
+        "Cyberbullying is affecting my mental health",
+    ],
+    "health_anxiety": [
+        "I am constantly worried I have a serious illness",
+        "Every little pain makes me think the worst",
+    ],
+    "general_chat": [
+        "Hello how are you today",
+        "I just wanted to talk to someone",
+        "What can you do for me",
+    ],
+    "seeking_support": [
+        "I need help and guidance from someone",
+        "I want to seek professional help for my problems",
+        "Where can I reach out for support",
+    ],
+}
+
+# Pre-compute intent anchor embeddings
+_intent_anchor_embeddings = {}
+for intent, texts in INTENT_ANCHORS.items():
+    _intent_anchor_embeddings[intent] = semantic_model.encode(texts, show_progress_bar=False)
+
+
+# ─── Public API Functions ──────────────────────────────────────────────────
+
+def encode_text(text: str) -> np.ndarray:
+    """Encode a single text into a semantic embedding vector."""
+    return semantic_model.encode([text], show_progress_bar=False)[0]
+
+
+def encode_texts(texts: list) -> np.ndarray:
+    """Encode a batch of texts into semantic embedding vectors."""
+    return semantic_model.encode(texts, show_progress_bar=False)
+
+
+def get_emotion_match(text: str, top_k: int = 3) -> list:
+    """
+    Match user text against emotion anchors.
+    Returns top-k matches with (emotion, similarity, risk_level).
+    """
+    text_emb = encode_text(text).reshape(1, -1)
+    sims = cosine_similarity(text_emb, _anchor_embeddings)[0]
+    top_indices = sims.argsort()[::-1][:top_k]
+    return [
+        {
+            "emotion": _anchor_keys[i],
+            "similarity": round(float(sims[i]), 4),
+            "risk_level": ANCHOR_RISK_LEVELS[_anchor_keys[i]],
         }
-    
-    # 1. Compute Embeddings
-    embeddings = model.encode([user_input] + INTENTS)
-    
-    # 2. Similarity
-    similarities = cosine_similarity([embeddings[0]], embeddings[1:])[0]
-    best_match_index = similarities.argmax()
-    
-    intent = INTENTS[best_match_index]
-    
-    # 3. Response Generation
-    reply = random.choice(RESPONSES[intent])
-    risk_level = RISK_SCORES.get(intent, 0)
-    
+        for i in top_indices
+    ]
+
+
+def get_semantic_intent(text: str) -> dict:
+    """
+    Classify intent using semantic similarity against intent anchors.
+    Returns {"intent": str, "confidence": float, "scores": dict}.
+    """
+    text_emb = encode_text(text).reshape(1, -1)
+    intent_scores = {}
+    for intent, anchor_embs in _intent_anchor_embeddings.items():
+        sims = cosine_similarity(text_emb, anchor_embs)[0]
+        intent_scores[intent] = float(sims.max())
+
+    best_intent = max(intent_scores, key=intent_scores.get)
     return {
-        "reply": reply,
-        "intent": intent,
-        "risk_level": risk_level
+        "intent": best_intent,
+        "confidence": round(intent_scores[best_intent], 4),
+        "scores": {k: round(v, 4) for k, v in sorted(intent_scores.items(), key=lambda x: -x[1])[:5]},
+    }
+
+
+def get_semantic_risk_score(text: str) -> dict:
+    """
+    Compute a semantic risk score by analyzing emotion anchor matches.
+    Returns {"score": float 0-1, "level": int 0-3, "top_emotions": list}.
+    """
+    matches = get_emotion_match(text, top_k=5)
+    # Weighted risk score: higher similarity to high-risk anchors = higher score
+    weighted_score = 0.0
+    total_weight = 0.0
+    for m in matches:
+        weight = m["similarity"]
+        risk_contribution = m["risk_level"] / 3.0  # Normalize to 0-1
+        weighted_score += weight * risk_contribution
+        total_weight += weight
+
+    risk_score = weighted_score / max(total_weight, 0.001)
+
+    # Map to risk level
+    if risk_score >= 0.65:
+        level = 3
+    elif risk_score >= 0.45:
+        level = 2
+    elif risk_score >= 0.25:
+        level = 1
+    else:
+        level = 0
+
+    return {
+        "score": round(risk_score, 4),
+        "level": level,
+        "top_emotions": matches[:3],
+    }
+
+
+def compute_embedding_similarity(emb1: np.ndarray, emb2: np.ndarray) -> float:
+    """Compute cosine similarity between two embedding vectors."""
+    return float(cosine_similarity(emb1.reshape(1, -1), emb2.reshape(1, -1))[0][0])
+
+
+def analyze_text_themes(texts: list) -> dict:
+    """
+    Analyze a batch of texts (e.g. journal entries) to detect dominant themes.
+    Returns {"themes": list of (theme, score), "risk_indicators": list}.
+    """
+    if not texts:
+        return {"themes": [], "risk_indicators": []}
+
+    embeddings = encode_texts(texts)
+    avg_embedding = embeddings.mean(axis=0).reshape(1, -1)
+
+    # Match average against intent anchors
+    intent_scores = {}
+    for intent, anchor_embs in _intent_anchor_embeddings.items():
+        sims = cosine_similarity(avg_embedding, anchor_embs)[0]
+        intent_scores[intent] = float(sims.max())
+
+    # Match against emotion anchors
+    emotion_sims = cosine_similarity(avg_embedding, _anchor_embeddings)[0]
+    top_emotion_indices = emotion_sims.argsort()[::-1][:5]
+    top_emotions = [
+        {"emotion": _anchor_keys[i], "similarity": round(float(emotion_sims[i]), 4)}
+        for i in top_emotion_indices
+    ]
+
+    # Sort themes by score
+    sorted_themes = sorted(intent_scores.items(), key=lambda x: -x[1])[:5]
+
+    # Detect risk indicators
+    risk_indicators = []
+    for i in top_emotion_indices[:3]:
+        if ANCHOR_RISK_LEVELS[_anchor_keys[i]] >= 2:
+            risk_indicators.append(_anchor_keys[i])
+
+    return {
+        "themes": [(t, round(s, 4)) for t, s in sorted_themes],
+        "dominant_emotions": top_emotions,
+        "risk_indicators": risk_indicators,
     }

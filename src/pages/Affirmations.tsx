@@ -3,187 +3,55 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaLightbulb, FaArrowLeft, FaSync, FaHeart, FaTrash, FaShareAlt, FaBookmark } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-
-const affirmationsPool: Record<string, string[]> = {
-  general: [
-    "You are capable of amazing things – take it one step at a time.",
-    "Your feelings are valid, and it's okay to ask for help when you need it.",
-    "You have overcome challenges before, and you can do it again.",
-    "You are worthy of love and kindness, starting with yourself.",
-    "Progress, not perfection – celebrate your small wins today.",
-    "You are stronger than your struggles; keep going, you're doing great.",
-    "It's okay to rest and recharge; self-care is a strength, not a weakness.",
-    "You bring unique value to the world – believe in your potential.",
-    "Tough days don't last, but tough people like you do.",
-    "You deserve peace and happiness – give yourself permission to seek it.",
-    "Every step forward is a victory, no matter how small.",
-    "You are not defined by your mistakes – learn and grow from them.",
-    "Your journey is unique, and that's what makes you special.",
-    "Breathe deeply; this moment is temporary, and better days are coming.",
-    "You have the power to create positive change in your life.",
-    "Embrace your strengths – they are your superpowers.",
-    "You are enough, just as you are right now.",
-    "Kindness starts with how you treat yourself – be gentle.",
-    "Your resilience inspires those around you.",
-    "Focus on what you can control, and let go of the rest.",
-    "You are a work in progress, and that's perfectly okay.",
-    "Believe in yourself – you've got this!",
-    "Your smile can brighten someone's day, including your own.",
-    "Challenges are opportunities in disguise – keep pushing.",
-    "You matter, and your voice deserves to be heard.",
-    "Take pride in how far you've come.",
-    "You are surrounded by love and support, even on hard days.",
-    "Your efforts are making a difference – keep going.",
-    "It's okay to not be okay sometimes – healing takes time.",
-    "You are brave for facing each day with hope.",
-    "Your potential is limitless – dream big.",
-    "Gratitude can shift your perspective – find one thing to appreciate today.",
-    "You are resilient and adaptable.",
-    "Self-compassion is the key to inner peace.",
-    "You have the strength to overcome any obstacle.",
-    "Your story is important and worth sharing.",
-    "Embrace change – it leads to growth.",
-    "You are loved more than you know.",
-    "One day at a time – you're making progress.",
-    "Your kindness makes the world better.",
-    "Trust the process – good things are coming.",
-    "You are a survivor, not a victim.",
-    "Your mind is powerful – focus on positivity.",
-    "You deserve joy and fulfillment.",
-    "Keep shining – your light is needed.",
-    "You are in control of your happiness.",
-    "Forgive yourself and move forward.",
-    "Your courage is admirable.",
-    "You are building a brighter future.",
-    "Remember, you are never alone in your journey."
-  ],
-  sad: [
-    "It's okay to take things one step at a time.",
-    "You are not alone in what you feel.",
-    "Be gentle with yourself today.",
-    "Even the darkest night will end and the sun will rise.",
-    "Your value isn't defined by your productivity.",
-    "Healing is not linear, and that's okay.",
-    "You have survived every hard moment so far.",
-    "Tears are a sign of strength, not weakness.",
-    "You deserve peace and happiness – give yourself permission to seek it.",
-    "Breathe deeply; this moment is temporary, and better days are coming.",
-    "It's okay to not be okay sometimes – healing takes time.",
-    "Remember, you are never alone in your journey."
-  ],
-  anxious: [
-    "Breathe slowly. You are safe right now.",
-    "You can handle this moment.",
-    "Focus on what you can control. Let go of the rest.",
-    "This feeling is temporary.",
-    "One breath at a time.",
-    "You have survived every hard day so far.",
-    "Right now, in this moment, you are okay.",
-    "You have the power to create positive change in your life.",
-    "Trust the process – good things are coming."
-  ],
-  happy: [
-    "Celebrate your progress today.",
-    "Your positivity makes a difference.",
-    "Embrace the joy in this moment.",
-    "You are a light to those around you.",
-    "Keep shining — the world needs your energy.",
-    "You deserve every good thing that comes to you.",
-    "Your kindess makes the world better.",
-    "Your smile can brighten someone's day, including your own."
-  ],
-};
-
-interface SavedAffirmation {
-  id: string;
-  text: string;
-  created_at: string;
-}
-
-const LS_KEY = (userId: string) => `mg_affirmations_${userId}`;
-
-const loadFromStorage = (userId: string): SavedAffirmation[] => {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY(userId)) || '[]');
-  } catch { return []; }
-};
-
-const saveToStorage = (userId: string, items: SavedAffirmation[]) => {
-  localStorage.setItem(LS_KEY(userId), JSON.stringify(items));
-};
+import { AffirmationService, SavedAffirmation } from '../services/affirmations';
 
 export const Affirmations: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const userId = user?.id ? String(user.id) : 'guest';
+  const userId = user?.id || 0;
 
   const [current, setCurrent] = useState('');
-  const [mood, setMood] = useState('general');
   const [saved, setSaved] = useState<SavedAffirmation[]>([]);
   const [savedTexts, setSavedTexts] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [loading, setLoading] = useState(true);
   const savedListRef = useRef<HTMLDivElement>(null);
 
-  // Load saved from localStorage on mount
   useEffect(() => {
-    const local = loadFromStorage(userId);
-    setSaved(local);
-    setSavedTexts(new Set(local.map(a => a.text)));
-
-    // Also try loading from API in background
-    if (user?.id) {
-      axios.get(`/api/affirmations/${user.id}`).then(r => {
-        if (r.data.length > 0) {
-          const merged: SavedAffirmation[] = r.data.map((a: any) => ({
-            id: String(a.id),
-            text: a.text,
-            created_at: a.created_at,
-          }));
-          const mergedTexts = new Set(merged.map(a => a.text));
-          setSaved(merged);
-          setSavedTexts(mergedTexts);
-          saveToStorage(userId, merged);
-        }
-      }).catch(() => {});
+    if (userId) {
+      loadData();
     }
   }, [userId]);
 
-  // Detect mood from localStorage
-  useEffect(() => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const moods = JSON.parse(localStorage.getItem('mood_history') || '[]');
-      if (moods.length > 0) {
-        const lastMood = moods[moods.length - 1].mood;
-        if (lastMood === 'Down' || lastMood === 'Crisis') setMood('sad');
-        else if (lastMood === 'Great' || lastMood === 'Good') setMood('happy');
-        else setMood('general');
-      }
-    } catch {}
-  }, []);
-
-  const getRandomAffirmation = useCallback(() => {
-    const pool = affirmationsPool[mood] || affirmationsPool.general;
-    let next = current;
-    // Avoid repeating the same one
-    while (next === current && pool.length > 1) {
-      next = pool[Math.floor(Math.random() * pool.length)];
+      const [daily, favorites] = await Promise.all([
+        AffirmationService.getDaily(userId),
+        AffirmationService.getSaved(userId)
+      ]);
+      setCurrent(daily.affirmation);
+      setSaved(favorites);
+      setSavedTexts(new Set(favorites.map(a => a.text)));
+    } catch (e) {
+      console.error("Failed to load affirmations", e);
+    } finally {
+      setLoading(false);
     }
-    setCurrent(next);
-  }, [mood, current]);
+  };
 
-  // Set initial affirmation once mood is set
-  useEffect(() => {
-    const pool = affirmationsPool[mood] || affirmationsPool.general;
-    setCurrent(pool[Math.floor(Math.random() * pool.length)]);
-  }, [mood]);
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsSpinning(true);
-    getRandomAffirmation();
-    setTimeout(() => setIsSpinning(false), 500);
+    try {
+      const daily = await AffirmationService.getDaily(userId);
+      setCurrent(daily.affirmation);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTimeout(() => setIsSpinning(false), 500);
+    }
   };
 
   const handleSave = async () => {
@@ -191,46 +59,31 @@ export const Affirmations: React.FC = () => {
     setSaving(true);
     setJustSaved(true);
 
-    const newItem: SavedAffirmation = {
-      id: `local_${Date.now()}`,
-      text: current,
-      created_at: new Date().toISOString(),
-    };
+    try {
+      const newItem = await AffirmationService.saveAffirmation(userId, current);
+      const updated = [newItem, ...saved];
+      setSaved(updated);
+      setSavedTexts(new Set(updated.map(a => a.text)));
 
-    // Immediately add to state (optimistic)
-    const updated = [newItem, ...saved];
-    setSaved(updated);
-    setSavedTexts(new Set(updated.map(a => a.text)));
-    saveToStorage(userId, updated);
-
-    // Scroll saved list into view after a brief delay
-    setTimeout(() => {
-      savedListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 200);
-
-    // Try to persist to backend in background
-    if (user?.id) {
-      axios.post(`/api/affirmations/${user.id}`, { text: current })
-        .then(r => {
-          // Update the id from server
-          setSaved(prev => prev.map(a => a.id === newItem.id ? { ...a, id: String(r.data.id) } : a));
-        })
-        .catch(() => {}); // silently fail — localStorage already has it
+      setTimeout(() => {
+        savedListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+      setTimeout(() => setJustSaved(false), 1500);
     }
-
-    setSaving(false);
-    setTimeout(() => setJustSaved(false), 1500);
   };
 
   const handleRemove = async (item: SavedAffirmation) => {
-    const updated = saved.filter(a => a.id !== item.id);
-    setSaved(updated);
-    setSavedTexts(new Set(updated.map(a => a.text)));
-    saveToStorage(userId, updated);
-
-    // Try backend delete too
-    if (user?.id && !item.id.startsWith('local_')) {
-      axios.delete(`/api/affirmations/${user.id}/${item.id}`).catch(() => {});
+    try {
+      await AffirmationService.deleteSaved(userId, item.id);
+      const updated = saved.filter(a => a.id !== item.id);
+      setSaved(updated);
+      setSavedTexts(new Set(updated.map(a => a.text)));
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -245,6 +98,10 @@ export const Affirmations: React.FC = () => {
 
   const isCurrentSaved = savedTexts.has(current);
 
+  if (loading) {
+     return <div style={{ textAlign: 'center', padding: '50px', color: '#0f766e' }}>Preparing your daily inspiration...</div>;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -252,7 +109,6 @@ export const Affirmations: React.FC = () => {
       transition={{ duration: 0.3 }}
       style={{ maxWidth: '600px', margin: '0 auto', padding: '16px 16px 80px', fontFamily: 'Inter, sans-serif' }}
     >
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           onClick={() => navigate('/dashboard')}
@@ -263,7 +119,6 @@ export const Affirmations: React.FC = () => {
         <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: '#0f766e' }}>Daily Affirmations</h2>
       </div>
 
-      {/* Main Affirmation Card */}
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
@@ -283,7 +138,6 @@ export const Affirmations: React.FC = () => {
             overflow: 'hidden',
           }}
         >
-          {/* Decorative blobs */}
           <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(15,118,110,0.06)' }} />
           <div style={{ position: 'absolute', bottom: -10, left: -10, width: 60, height: 60, borderRadius: '50%', background: 'rgba(15,118,110,0.05)' }} />
 
@@ -298,7 +152,6 @@ export const Affirmations: React.FC = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Action Buttons */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '36px', justifyContent: 'center' }}>
         <button
           onClick={handleRefresh}
@@ -344,7 +197,6 @@ export const Affirmations: React.FC = () => {
         </motion.button>
       </div>
 
-      {/* Saved Affirmations Section */}
       <AnimatePresence>
         {saved.length > 0 && (
           <motion.div
@@ -354,7 +206,6 @@ export const Affirmations: React.FC = () => {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
           >
-            {/* Section Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <FaBookmark size={14} color="#0f766e" />
               <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#0f766e', letterSpacing: '-0.01em' }}>
@@ -365,7 +216,6 @@ export const Affirmations: React.FC = () => {
               </span>
             </div>
 
-            {/* Scrollable List */}
             <div
               style={{
                 maxHeight: saved.length > 4 ? '420px' : 'none',
@@ -374,7 +224,7 @@ export const Affirmations: React.FC = () => {
               }}
             >
               <AnimatePresence initial={false}>
-                {saved.map((a, i) => (
+                {saved.map((a) => (
                   <motion.div
                     key={a.id}
                     layout
@@ -384,7 +234,6 @@ export const Affirmations: React.FC = () => {
                     transition={{
                       duration: 0.35,
                       ease: [0.22, 1, 0.36, 1],
-                      delay: i === 0 ? 0 : 0,  // no delay for new items, slight for initial load
                     }}
                     style={{
                       background: '#fff',
@@ -401,7 +250,6 @@ export const Affirmations: React.FC = () => {
                       overflow: 'hidden',
                     }}
                   >
-                    {/* Quote mark accent */}
                     <span style={{ fontSize: '2rem', color: '#99f6e4', lineHeight: 1, flexShrink: 0, marginTop: '-4px', userSelect: 'none' }}>"</span>
 
                     <p style={{
@@ -411,7 +259,6 @@ export const Affirmations: React.FC = () => {
                       {a.text}
                     </p>
 
-                    {/* Actions */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0 }}>
                       <button
                         onClick={() => handleShare(a.text)}
@@ -450,3 +297,4 @@ export const Affirmations: React.FC = () => {
     </motion.div>
   );
 };
+

@@ -92,6 +92,77 @@
   color: #e57373; /* Soft warm pink */
 }
 
+.reflectionCard {
+  background: linear-gradient(135deg, #f0f7f4 0%, #ffffff 100%);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid #d1e7dd;
+  box-shadow: 0 8px 24px rgba(46, 139, 87, 0.08);
+  animation: slideDown 0.5s ease-out;
+}
+
+.reflectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.reflectionHeader h4 {
+  margin: 0;
+  color: #2f7a62;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.magicIcon {
+  color: #57a389;
+  font-size: 1.2rem;
+}
+
+.reflectionSummary {
+  color: #4a5c54;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+}
+
+.reflectionFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #d1e7dd;
+}
+
+.themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.themeBadge {
+  background-color: #e8f4f0;
+  color: #2f7a62;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.recommendation {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background-color: #fff9e6;
+  color: #856404;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -307,6 +378,22 @@
   white-space: pre-wrap;
   word-break: break-word;
   font-size: 1.05rem;
+}
+
+.entryThemes {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.entryThemes span {
+  font-size: 0.75rem;
+  color: #57a389;
+  background-color: #f1f8f5;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  font-weight: 500;
 }
 
 .emptyState {
