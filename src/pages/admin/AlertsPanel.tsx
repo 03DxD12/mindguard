@@ -3,19 +3,41 @@ import styles from "./layout/AdminLayout.module.css";
 import { format } from "date-fns";
 
 interface Alert {
+  id?: number;
   session_id: string;
   risk_level: number;
   mood: string;
   action: string;
   timestamp: string;
+  is_reviewed?: boolean;
 }
 
 interface AlertsPanelProps {
   alerts: Alert[];
+  onReviewed?: () => void;
 }
 
-export default function AlertsPanel({ alerts }: AlertsPanelProps) {
+export default function AlertsPanel({ alerts, onReviewed }: AlertsPanelProps) {
   if (!alerts || alerts.length === 0) return null;
+
+  const markReviewed = async (alert: Alert) => {
+    if (!alert.id) return;
+
+    try {
+      const res = await fetch(`/api/admin/alerts/${alert.id}/review`, {
+        method: 'PUT'
+      });
+
+      if (!res.ok) {
+        throw new Error(`Review failed: ${res.status}`);
+      }
+
+      onReviewed?.();
+    } catch (error) {
+      console.error('Failed to mark alert as reviewed', error);
+      window.alert('Could not mark this alert as reviewed. Please try again.');
+    }
+  };
 
   return (
     <div className={styles.alertsPanel}>
@@ -41,9 +63,10 @@ export default function AlertsPanel({ alerts }: AlertsPanelProps) {
               </div>
               <button 
                 className={styles.reviewBtn}
-                onClick={() => window.alert(`Reviewing session ${alert.session_id}...`)}
+                onClick={() => markReviewed(alert)}
+                disabled={alert.is_reviewed}
               >
-                Mark as Reviewed
+                {alert.is_reviewed ? 'Reviewed' : 'Mark as Reviewed'}
               </button>
             </div>
           );

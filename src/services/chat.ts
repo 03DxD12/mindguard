@@ -23,31 +23,43 @@ export const ChatService = {
     reasoning?: any;
     session_id?: string;
   }> {
-    try {
-      const res = await fetch('/api/chat', {
+    const payload = JSON.stringify({
+      message,
+      history,
+      session_id: ChatService.getSessionId(),
+      turn,
+      mood
+    });
+
+    const postChat = async (url: string) => {
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          message,
-          history, 
-          session_id: ChatService.getSessionId(),
-          turn,
-          mood
-        }),
+        body: payload,
       });
 
       if (!res.ok) {
         throw new Error(`API error: ${res.status}`);
       }
 
-      const data = await res.json();
-      return data;
+      return res.json();
+    };
+
+    try {
+      return await postChat('/api/chat');
     } catch (error) {
-      console.error('Chat API Error:', error);
+      console.warn('Chat proxy request failed, trying backend directly:', error);
+
+      try {
+        return await postChat('http://127.0.0.1:8000/api/chat');
+      } catch (directError) {
+        console.error('Chat API Error:', directError);
+      }
+
       return {
-        response: "I'm having trouble connecting to my empathy engine right now. Please ensure the Python backend is running.",
+        response: "I'm having trouble connecting to MindGuard right now. Please start the Python backend on port 8000, then refresh and try again.",
         sentiment: "neutral",
         action: "none"
       };

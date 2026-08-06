@@ -13,8 +13,9 @@
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   --radius: 16px;
   --font-sans: "Outfit", sans-serif;
-  --max-width: 480px; /* Slightly wider for better mobile feel */
-  --nav-height: 72px;
+  --max-width: 1180px;
+  --nav-height: 76px;
+  --side-nav-width: 96px;
 }
 
 [data-theme="dark"] {
@@ -59,9 +60,7 @@ body {
   background: linear-gradient(135deg, #e0f7fa 0%, #e8eaf6 100%);
   color: var(--text);
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* allow page to scroll vertically */
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -71,31 +70,38 @@ body {
 
 #root {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .app-container {
   width: 100%;
-  max-width: var(--max-width);
   height: 100vh; /* Fallback */
   height: 100dvh; /* Dynamic viewport height for mobile */
-  max-height: 850px;
   background: var(--bg);
-  border-radius: 28px;
-  box-shadow: var(--shadow);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 900px) {
+  #root {
+    display: block;
+  }
+
   .app-container {
+    max-width: none;
     height: 100vh;
     height: 100dvh;
-    max-height: none;
+    min-height: 0;
     border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-container {
     max-width: none;
   }
 }

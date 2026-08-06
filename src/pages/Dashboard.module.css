@@ -1,188 +1,304 @@
 .container {
-  animation: fadeIn 0.3s ease-out;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  animation: fadeIn 0.25s ease-out;
 }
 
-.header {
+.hero {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 20px;
   margin-bottom: 24px;
+  padding: clamp(20px, 3vw, 30px);
+  background: var(--surface);
+  border: 1px solid rgba(0, 96, 100, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .greeting {
-  color: var(--primary);
-  margin-bottom: 4px;
+  color: var(--text);
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.05;
+  margin-bottom: 8px;
 }
 
 .date {
-  font-size: 14px;
+  font-size: 15px;
+}
+
+.profileBtn {
+  width: 54px;
+  height: 54px;
+  border: none;
+  border-radius: 18px;
+  background: var(--primary);
+  color: white;
+  font-size: 22px;
+  font-weight: 800;
+  cursor: pointer;
+  flex: 0 0 auto;
+  box-shadow: 0 12px 24px rgba(0, 96, 100, 0.18);
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.primaryColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 }
 
 .moodCard {
-  margin-bottom: 24px;
+  margin-bottom: 0;
+}
+
+.cardHeader,
+.panelHeader {
+  margin-bottom: 18px;
+}
+
+.cardHeader h3,
+.panelHeader h3 {
+  color: var(--primary);
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.cardHeader p,
+.panelHeader p {
+  font-size: 14px;
 }
 
 .moodGrid {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(8px, 2vw, 14px);
 }
 
 .moodBtn {
-  background: none;
-  border: none;
+  min-width: 0;
+  min-height: 104px;
+  padding: 14px 8px;
+  border: 1px solid #e5edf0;
+  border-radius: 16px;
+  background: #fbfefe;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 8px;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 12px;
-  transition: background 0.2s;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
 .moodBtn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  border-color: rgba(0, 96, 100, 0.28);
+  background: #f0fbfb;
 }
 
 .moodEmoji {
-  font-size: 24px;
-  margin-bottom: 4px;
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1;
 }
 
 .moodLabel {
-  font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.sectionTitle {
-  margin-bottom: 16px;
+.supportGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.affirmationPreview,
+.emergencyCard {
+  margin-bottom: 0;
+}
+
+.affirmationPreview {
+  background: linear-gradient(135deg, #f0fdf4, #ffffff);
+  border: 1px solid #dcfce7;
+  cursor: pointer;
+}
+
+.affirmationHeader,
+.emergencyHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.affirmationHeader {
   color: var(--primary);
+}
+
+.affirmationText {
+  color: var(--text);
+  font-size: clamp(16px, 2vw, 19px);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.emergencyCard {
+  background: #fff1f2;
+  border-left: 4px solid var(--alert);
+}
+
+.emergencyHeader,
+.emergencyTitle {
+  color: var(--alert);
+}
+
+.emergencyText {
+  color: #b91c1c;
+  margin-bottom: 16px;
+}
+
+.emergencyButton {
+  width: 100%;
+}
+
+.actionsPanel {
+  padding: clamp(18px, 2vw, 24px);
+  background: var(--surface);
+  border-radius: 20px;
+  border: 1px solid rgba(0, 96, 100, 0.08);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
 }
 
 .actionGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .actionCard {
-  margin-bottom: 0;
-}
-
-.actionBtn {
-  width: 100%;
-  background: none;
-  border: none;
-  padding: 20px;
+  min-width: 0;
+  min-height: 124px;
+  padding: 18px 14px;
+  border: 1px solid #e8eef2;
+  border-radius: 16px;
+  background: #fbfefe;
+  color: var(--text);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  gap: 7px;
+  text-align: left;
   cursor: pointer;
-  color: var(--text);
-  transition: color 0.2s;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.actionBtn:hover {
-  color: var(--primary);
+.actionCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 96, 100, 0.28);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
 }
 
 .actionIcon {
-  font-size: 24px;
-  margin-bottom: 8px;
   color: var(--primary);
+  font-size: 25px;
+  margin-bottom: 3px;
 }
 
-.iconBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-.avatarPlaceholder {
-  width: 40px;
-  height: 40px;
-  background: var(--primary);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.actionLabel {
+  font-size: 16px;
   font-weight: 700;
-  font-size: 18px;
 }
 
-.affirmationPreview {
-  margin-bottom: 24px;
-  background: linear-gradient(135deg, #f0fdf4, #ffffff);
-  border: 1px solid #dcfce7;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.affirmationPreview:hover {
-  transform: translateY(-2px);
-}
-
-.affirmationHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.actionCard small {
+  color: var(--text-muted);
   font-size: 12px;
-  font-weight: 700;
-  color: var(--primary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
 }
 
-.affirmationText {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text);
-  font-style: italic;
-  line-height: 1.4;
-  margin: 0;
+@media (max-width: 430px) {
+  .hero {
+    align-items: flex-start;
+  }
+
+  .moodGrid {
+    grid-template-columns: repeat(5, minmax(52px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .moodBtn {
+    min-height: 88px;
+  }
+
+  .actionGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.emergencyCard {
-  background: #ffebee;
-  border-left: 4px solid var(--alert);
+@media (min-width: 760px) {
+  .supportGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+  }
+
+  .actionGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
-.emergencyTitle {
-  display: block;
-  color: var(--alert);
-  margin-bottom: 4px;
+@media (min-width: 1120px) {
+  .dashboardGrid {
+    grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.72fr);
+    gap: 24px;
+  }
+
+  .actionsPanel {
+    position: sticky;
+    top: 0;
+  }
+
+  .actionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.emergencyText {
-  font-size: 13px;
-  margin-bottom: 12px;
-  color: #c62828;
+@media (min-width: 1440px) {
+  .dashboardGrid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(460px, 0.7fr);
+  }
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
-}
-
-.securityNotice {
-  margin-top: 32px;
-  padding: 16px;
-  background: var(--bg-alt);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-  text-align: center;
 }

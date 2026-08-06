@@ -5,17 +5,74 @@ Provides sentence-transformer embeddings, emotion anchor matching,
 and cosine-similarity helpers for the main AI pipeline.
 """
 
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import logging
+import hashlib
+import os
+import re
+
+try:
+    from sentence_transformers import SentenceTransformer
+except Exception:
+    SentenceTransformer = None
 
 logger = logging.getLogger(__name__)
 
 # ─── Layer 1: Semantic Understanding Model ─────────────────────────────────
-logger.info("Loading sentence transformer model (all-MiniLM-L6-v2)...")
-semantic_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-logger.info("Sentence transformer model loaded successfully.")
+class LocalSemanticFallback:
+    """Small deterministic embedding fallback when MiniLM is unavailable."""
+
+    dimension = 384
+
+    def encode(self, texts, show_progress_bar=False):
+        if isinstance(texts, str):
+            texts = [texts]
+        return np.array([self._encode_one(text) for text in texts], dtype=np.float32)
+
+    def _encode_one(self, text: str) -> np.ndarray:
+        vector = np.zeros(self.dimension, dtype=np.float32)
+        normalized = re.sub(r"\s+", " ", (text or "").lower()).strip()
+        tokens = re.findall(r"[a-z0-9_']+", normalized)
+        features = tokens + [normalized[i:i + 3] for i in range(max(len(normalized) - 2, 0))]
+
+        for feature in features:
+            digest = hashlib.md5(feature.encode("utf-8")).digest()
+            index = int.from_bytes(digest[:4], "little") % self.dimension
+            sign = 1.0 if digest[4] % 2 == 0 else -1.0
+            vector[index] += sign
+
+        norm = np.linalg.norm(vector)
+        if norm > 0:
+            vector /= norm
+        return vector
+
+
+def load_semantic_model():
+    if SentenceTransformer is None:
+        logger.warning("sentence-transformers import failed; using local semantic fallback.")
+        return LocalSemanticFallback()
+
+    use_local_minilm = os.getenv("MINGUARD_USE_LOCAL_MINILM", "false").lower() == "true"
+    if not use_local_minilm:
+        logger.info("Using temporary local semantic fallback. Set MINGUARD_USE_LOCAL_MINILM=true to load MiniLM.")
+        return LocalSemanticFallback()
+
+    try:
+        logger.info("Loading sentence transformer model (all-MiniLM-L6-v2)...")
+        allow_download = os.getenv("MINGUARD_ALLOW_MODEL_DOWNLOAD", "false").lower() == "true"
+        model = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2",
+            local_files_only=not allow_download,
+        )
+        logger.info("Sentence transformer model loaded successfully.")
+        return model
+    except Exception as exc:
+        logger.warning("MiniLM model unavailable; using local semantic fallback: %s", exc)
+        return LocalSemanticFallback()
+
+
+semantic_model = load_semantic_model()
 
 # ─── Emotion Anchor Embeddings ─────────────────────────────────────────────
 # Pre-computed embeddings for 35+ emotional states used for semantic matching.

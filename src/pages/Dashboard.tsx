@@ -3,16 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { FaRobot, FaWind, FaUsers, FaCalendarCheck, FaBook, FaLightbulb, FaMagic } from 'react-icons/fa';
+import { FaRobot, FaWind, FaUsers, FaCalendarCheck, FaBook, FaLightbulb, FaMagic, FaShieldAlt } from 'react-icons/fa';
 import { WellnessService } from '../services/wellness';
 import { AffirmationService } from '../services/affirmations';
 import styles from './Dashboard.module.css';
+
+const moodOptions = [
+  { label: 'Great', emoji: '😄' },
+  { label: 'Good', emoji: '🙂' },
+  { label: 'Okay', emoji: '😐' },
+  { label: 'Down', emoji: '😔' },
+  { label: 'Crisis', emoji: '😫' },
+];
+
+const quickActions = [
+  { label: 'AI Chat', icon: FaRobot, path: '/chat', detail: 'Talk now' },
+  { label: 'Wellness', icon: FaWind, path: '/wellness', detail: 'Breathing and mood' },
+  { label: 'Journal', icon: FaBook, path: '/journal', detail: 'Write a reflection' },
+  { label: 'Inspire', icon: FaLightbulb, path: '/affirmations', detail: 'Daily affirmation' },
+  { label: 'Community', icon: FaUsers, path: '/groups', detail: 'Peer support' },
+  { label: 'Specialist', icon: FaCalendarCheck, path: '/booking', detail: 'Book counseling' },
+];
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const userId = user?.id || 0;
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const firstName = user?.fullname?.split(' ')[0] || 'Friend';
 
   const [dailyAffirmation, setDailyAffirmation] = useState<string | null>(null);
   const [loadingAffirmation, setLoadingAffirmation] = useState(false);
@@ -38,100 +56,95 @@ export const Dashboard: React.FC = () => {
   const handleLogMood = async (mood: string) => {
     try {
       await WellnessService.logMood(userId, mood);
-      alert(`Mood logged: ${mood}! Your dashboard will adapt.`);
-      loadAffirmation(); // Reload affirmation as it might change based on mood
+      loadAffirmation();
     } catch (e) {
-      console.error("Failed to log mood", e);
+      console.error('Failed to log mood', e);
     }
   };
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
+      <header className={styles.hero}>
         <div>
-          <h2 className={styles.greeting}>Hi, {user?.fullname.split(' ')[0] || 'Friend'}</h2>
+          <span className={styles.eyebrow}>MindGuard home</span>
+          <h2 className={styles.greeting}>Hi, {firstName}</h2>
           <p className={styles.date}>{dateStr}</p>
         </div>
-        <div className={styles.headerActions}>
-           <button className={styles.iconBtn} onClick={() => navigate('/profile')}>
-             <div className={styles.avatarPlaceholder}>{user?.fullname.charAt(0)}</div>
-           </button>
-        </div>
+        <button className={styles.profileBtn} onClick={() => navigate('/profile')} aria-label="Open profile">
+          {user?.fullname?.charAt(0)?.toUpperCase() || 'U'}
+        </button>
       </header>
 
-      <Card title="How are you feeling?" className={styles.moodCard}>
-        <div className={styles.moodGrid}>
-          {['Great', 'Good', 'Okay', 'Down', 'Crisis'].map((mood) => (
-            <button 
-              key={mood} 
-              className={styles.moodBtn}
-              onClick={() => handleLogMood(mood)}
-            >
-              <span className={styles.moodEmoji}>
-                {mood === 'Great' ? '😄' : mood === 'Good' ? '🙂' : mood === 'Okay' ? '😐' : mood === 'Down' ? '😔' : '😫'}
-              </span>
-              <span className={styles.moodLabel}>{mood}</span>
-            </button>
-          ))}
-        </div>
-      </Card>
+      <div className={styles.dashboardGrid}>
+        <section className={styles.primaryColumn}>
+          <Card className={styles.moodCard}>
+            <div className={styles.cardHeader}>
+              <div>
+                <h3>How are you feeling?</h3>
+                <p>Log a quick check-in to update your wellness picture.</p>
+              </div>
+            </div>
 
-      {dailyAffirmation && (
-        <Card className={styles.affirmationPreview} onClick={() => navigate('/affirmations')}>
-          <div className={styles.affirmationHeader}>
-            <FaMagic color="var(--primary)" />
-            <span>Today's Inspiration</span>
+            <div className={styles.moodGrid}>
+              {moodOptions.map((mood) => (
+                <button
+                  key={mood.label}
+                  className={styles.moodBtn}
+                  onClick={() => handleLogMood(mood.label)}
+                >
+                  <span className={styles.moodEmoji}>{mood.emoji}</span>
+                  <span className={styles.moodLabel}>{mood.label}</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <div className={styles.supportGrid}>
+            <Card className={styles.affirmationPreview} onClick={() => navigate('/affirmations')}>
+              <div className={styles.affirmationHeader}>
+                <FaMagic />
+                <span>Today's Inspiration</span>
+              </div>
+              <p className={styles.affirmationText}>
+                {loadingAffirmation
+                  ? 'Preparing a daily affirmation...'
+                  : dailyAffirmation || 'Take one steady step today. You do not have to carry everything at once.'}
+              </p>
+            </Card>
+
+            <Card className={styles.emergencyCard}>
+              <div className={styles.emergencyHeader}>
+                <FaShieldAlt />
+                <strong className={styles.emergencyTitle}>Need immediate help?</strong>
+              </div>
+              <p className={styles.emergencyText}>LSPU Safety & Security is available 24/7.</p>
+              <Button variant="alert" size="sm" className={styles.emergencyButton} onClick={() => navigate('/emergency')}>
+                Call Emergency
+              </Button>
+            </Card>
           </div>
-          <p className={styles.affirmationText}>"{dailyAffirmation}"</p>
-        </Card>
-      )}
+        </section>
 
-      <h3 className={styles.sectionTitle}>Quick Actions</h3>
-      <div className={styles.actionGrid}>
-        <Card className={styles.actionCard} padding={false}>
-          <button className={styles.actionBtn} onClick={() => navigate('/chat')}>
-            <FaRobot className={styles.actionIcon} />
-            <span>AI Chat</span>
-          </button>
-        </Card>
-        <Card className={styles.actionCard} padding={false}>
-          <button className={styles.actionBtn} onClick={() => navigate('/wellness')}>
-            <FaWind className={styles.actionIcon} />
-            <span>Wellness</span>
-          </button>
-        </Card>
-        <Card className={styles.actionCard} padding={false}>
-          <button className={styles.actionBtn} onClick={() => navigate('/journal')}>
-            <FaBook className={styles.actionIcon} />
-            <span>Journal</span>
-          </button>
-        </Card>
-        <Card className={styles.actionCard} padding={false}>
-          <button className={styles.actionBtn} onClick={() => navigate('/affirmations')}>
-            <FaLightbulb className={styles.actionIcon} />
-            <span>Inspire</span>
-          </button>
-        </Card>
-        <Card className={styles.actionCard} padding={false}>
-          <button className={styles.actionBtn} onClick={() => navigate('/groups')}>
-            <FaUsers className={styles.actionIcon} />
-            <span>Community</span>
-          </button>
-        </Card>
-        <Card className={styles.actionCard} padding={false}>
-          <button className={styles.actionBtn} onClick={() => navigate('/booking')}>
-            <FaCalendarCheck className={styles.actionIcon} />
-            <span>Specialist</span>
-          </button>
-        </Card>
+        <aside className={styles.actionsPanel}>
+          <div className={styles.panelHeader}>
+            <h3>Quick Actions</h3>
+            <p>Jump into common support tools.</p>
+          </div>
+
+          <div className={styles.actionGrid}>
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <button key={action.path} className={styles.actionCard} onClick={() => navigate(action.path)}>
+                  <Icon className={styles.actionIcon} />
+                  <span className={styles.actionLabel}>{action.label}</span>
+                  <small>{action.detail}</small>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
       </div>
-
-      <Card className={styles.emergencyCard}>
-        <strong className={styles.emergencyTitle}>Need immediate help?</strong>
-        <p className={styles.emergencyText}>LSPU Safety & Security is available 24/7.</p>
-        <Button variant="alert" size="sm" className="w-full" onClick={() => navigate('/emergency')}>Call Emergency</Button>
-      </Card>
     </div>
   );
 };
-

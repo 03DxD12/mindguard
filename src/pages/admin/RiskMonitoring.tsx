@@ -126,7 +126,7 @@ export default function RiskMonitoring() {
         </div>
       </div>
 
-      <AlertsPanel alerts={alerts} />
+      <AlertsPanel alerts={alerts} onReviewed={fetchData} />
     </div>
   );
 }
