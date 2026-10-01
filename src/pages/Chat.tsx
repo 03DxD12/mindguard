@@ -29,6 +29,7 @@ export const Chat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [turn, setTurn] = useState(0);
   const [isCrisis, setIsCrisis] = useState(false);
+  const [crisisMessageId, setCrisisMessageId] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -72,6 +73,7 @@ export const Chat: React.FC = () => {
 
       if (data.action?.startsWith('crisis_')) {
         setIsCrisis(true);
+        setCrisisMessageId(aiMsg.id);
       }
     } catch (error) {
       console.error('Failed to get response', error);
@@ -99,8 +101,8 @@ export const Chat: React.FC = () => {
 
       <Card className={styles.chatArea} padding={false}>
         <div className={styles.messages} ref={scrollRef}>
-          {messages.map((msg, idx) => {
-            const isCrisisMsg = isCrisis && idx === messages.length - 1 && msg.role === 'ai';
+          {messages.map((msg) => {
+            const isCrisisMsg = isCrisis && msg.id === crisisMessageId && msg.role === 'ai';
             return (
               <AnimatedItem key={msg.id} delay={0.1}>
                 <div className={`
@@ -149,16 +151,16 @@ export const Chat: React.FC = () => {
           <input
             type="text"
             className={styles.input}
-            placeholder={isCrisis ? 'Please reach out for help...' : 'Type your message...'}
+            placeholder={isCrisis ? 'You can keep talking here while reaching out for help...' : 'Type your message...'}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            disabled={isTyping || isCrisis}
+            disabled={isTyping}
           />
           <Button
             className={styles.sendBtn}
             onClick={() => handleSend()}
-            disabled={!input.trim() || isTyping || isCrisis}
+            disabled={!input.trim() || isTyping}
           >
             <FaPaperPlane />
           </Button>

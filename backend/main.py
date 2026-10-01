@@ -46,11 +46,20 @@ from sklearn.semi_supervised import SelfTrainingClassifier
 
 # ── 2. TensorFlow/Keras (Neural Network Stack) ────────────────────────────
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TF warnings
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Embedding, GlobalMaxPooling1D
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+try:
+    import tensorflow as tf
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import LSTM, Dense, Embedding, GlobalMaxPooling1D
+    from tensorflow.keras.preprocessing.text import Tokenizer
+    from tensorflow.keras.preprocessing.sequence import pad_sequences
+    TENSORFLOW_AVAILABLE = True
+    TENSORFLOW_IMPORT_ERROR = None
+except Exception as exc:
+    tf = None
+    Sequential = LSTM = Dense = Embedding = GlobalMaxPooling1D = None
+    Tokenizer = pad_sequences = None
+    TENSORFLOW_AVAILABLE = False
+    TENSORFLOW_IMPORT_ERROR = exc
 
 # ── 3. NLP Utilities ───────────────────────────────────────────────────────
 import nltk
@@ -771,7 +780,7 @@ DYNAMIC_FRAGMENTS = {
             "You're not alone in this.",
             "We can talk more about it if you'd like.",
             "Take your time. There's no rush at all.",
-            "I'm not going anywhere — I'm here for as long as you need.",
+            "This chat can stay with you right now, and real people can support you too.",
         ],
         "tl": [
             "Nandito lang ako para sa iyo.",
@@ -779,7 +788,7 @@ DYNAMIC_FRAGMENTS = {
             "Hindi ka nag-iisa sa labang ito.",
             "Pwede pa nating pag-usapan ito kung gusto mo.",
             "Dahan-dahan lang. Walang apuran.",
-            "Hindi ako aalis — nandito ako habang kailangan mo.",
+            "Nandito ang chat na ito ngayon, at may mga totoong taong pwede ring tumulong sa iyo.",
         ],
         "taglish": [
             "Nandito lang ako if you need someone to talk to.",
@@ -787,7 +796,7 @@ DYNAMIC_FRAGMENTS = {
             "You're not alone in this fight, nandito ako.",
             "We can talk more about this if you want.",
             "Take your time. Walang apuran.",
-            "I'm not going anywhere — nandito ako for as long as you need.",
+            "This chat is here right now, at may real people din na pwedeng tumulong sa iyo.",
         ]
     }
 }
@@ -1039,19 +1048,19 @@ GROUNDING_TECHNIQUES = {
 
 CRISIS_RESPONSES = {
     "en": {
-        "standard": "I hear you, and I'm concerned about you. What you're feeling is real, and you don't have to face it alone. Nandito ako para makinig. Kapag handa ka, pwede mong kausapin ang Ka-PEER Yu organization o ang Guidance and Counseling Office sa iyong campus.",
-        "plan": "I'm genuinely worried about you right now. Your safety is the most important thing. Nandito ako para makinig. Para sa mas malalim na tulong, please speak with the Ka-PEER Yu organization or the Guidance and Counseling Office on your campus right now.",
-        "high_risk": "I hear how much pain you're in, and I'm here. Ang kaligtasan mo ang pinaka-importante. Nandito ako para makinig. Please talk to the Ka-PEER Yu organization or the Guidance and Counseling Office sa iyong campus ngayon din.",
+        "standard": "I hear you, and I'm concerned about your safety. What you're feeling is real, and you don't have to face it alone. Please contact a trusted person, Ka-PEER Yu, the Guidance and Counseling Office, or emergency services if you might act on these thoughts.",
+        "plan": "I'm really worried about you right now. Your safety comes first. Please move away from anything you could use to hurt yourself and contact a trusted person, campus Guidance, Ka-PEER Yu, or emergency services now.",
+        "high_risk": "I hear how much pain you're in. You deserve immediate support from a real person. Please contact someone you trust, campus Guidance, Ka-PEER Yu, or emergency services now, especially if you feel you cannot stay safe.",
     },
     "tl": {
-        "standard": "Naririnig kita, at nag-aalala ako sa iyo. Totoo ang nararamdaman mo. Nandito ako para makinig. Kapag handa ka, pwede mong kausapin ang Ka-PEER Yu organization o ang Guidance and Counseling Office sa iyong campus.",
-        "plan": "Nag-aalala talaga ako sa iyo ngayon. Ang kaligtasan mo ang pinaka-importante. Nandito ako para makinig. Para sa mas malalim na tulong, kailangang makausap mo ang Ka-PEER Yu organization o ang Guidance and Counseling Office sa iyong campus ngayon din.",
-        "high_risk": "Ramdam ko ang bigat ng iyong pinagdadaanan, at nandito ako. Ang kaligtasan mo ang pinaka-importante. Nandito ako para makinig. Pwede mong kausapin ang Ka-PEER Yu organization o ang Guidance and Counseling Office sa iyong campus ngayon din.",
+        "standard": "Naririnig kita, at nag-aalala ako sa kaligtasan mo. Totoo ang nararamdaman mo, at hindi mo kailangang mag-isa. Pakiusap, kausapin ang taong pinagkakatiwalaan mo, Ka-PEER Yu, Guidance Office, o emergency services kung baka masaktan mo ang sarili mo.",
+        "plan": "Nag-aalala talaga ako sa iyo ngayon. Unahin natin ang kaligtasan mo. Lumayo muna sa anumang pwede mong gamitin para saktan ang sarili mo at tumawag o lumapit sa trusted person, Guidance Office, Ka-PEER Yu, o emergency services ngayon.",
+        "high_risk": "Ramdam ko ang bigat ng pinagdadaanan mo. Deserve mong may totoong taong kasama ngayon. Kausapin ang trusted person, Guidance Office, Ka-PEER Yu, o emergency services ngayon, lalo na kung hindi ka sigurado na ligtas ka.",
     },
     "taglish": {
-        "standard": "I hear you, at nag-aalala ako sa iyo. Your feelings are valid. Nandito ako para makinig. Kapag ready ka na, you can talk to Ka-PEER Yu or the Guidance Office sa iyong campus.",
-        "plan": "I'm really worried about you right now. Pinaka-importante ang safety mo. Nandito ako para makinig. For deeper support, please reach out sa Ka-PEER Yu organization or the Guidance and Counseling Office on your campus right now.",
-        "high_risk": "I can feel your pain, and I'm here. Safety is the most important thing. Nandito ako para makinig. You can talk to Ka-PEER Yu or the Guidance Office sa iyong campus ngayon din.",
+        "standard": "I hear you, at nag-aalala ako sa safety mo. Your feelings are valid, and hindi mo kailangang mag-isa. Please contact a trusted person, Ka-PEER Yu, Guidance Office, or emergency services kung baka masaktan mo ang sarili mo.",
+        "plan": "I'm really worried about you right now. Safety muna. Please move away from anything you could use to hurt yourself and contact a trusted person, Guidance Office, Ka-PEER Yu, or emergency services now.",
+        "high_risk": "I can hear how painful this is. You deserve real-person support ngayon. Please contact someone you trust, Guidance Office, Ka-PEER Yu, or emergency services now, especially kung hindi ka sure na safe ka.",
     }
 }
 
@@ -1097,6 +1106,29 @@ def pick_followup(intent: str, lang_key: str, used_followups: set) -> str:
     used_followups.add(choice)
     return choice
 
+def language_key(lang: str) -> str:
+    """Normalize language detector output before indexing response dictionaries."""
+    return lang if lang in {"en", "tl", "taglish"} else "taglish"
+
+def user_signals_dependence(text: str) -> bool:
+    normalized = fuzzy_preprocess(text)
+    return any(re.search(pattern, normalized, re.IGNORECASE) for pattern in DEPENDENCE_PHRASES)
+
+def apply_ethical_guardrails(response: str, lang_key: str, user_text: str, risk_level: int) -> str:
+    """Keep local responses supportive without overpromising or replacing people."""
+    safe_response = response
+    if user_signals_dependence(user_text) and risk_level < 3:
+        safe_response = f"{safe_response} {ANTI_DEPENDENCE[lang_key]}"
+
+    replacements = {
+        "I'm not going anywhere": "This chat is here right now",
+        "for as long as you need": "while we talk",
+        "Hindi ako aalis": "Nandito ang chat na ito ngayon",
+    }
+    for unsafe, safer in replacements.items():
+        safe_response = safe_response.replace(unsafe, safer)
+    return safe_response
+
 def generate_response(
     intent: str,
     confidence: float,
@@ -1110,7 +1142,7 @@ def generate_response(
 ) -> dict:
     used = get_used_responses(session_id)
     used_followups = _sessions[session_id]["used_followups"]
-    lang_key = lang if lang in ["en", "tl", "taglish"] else "tl"
+    lang_key = language_key(lang)
     prefix = TRANSPARENCY[lang_key] if is_first_turn else ""
     turn = _sessions[session_id]["turn"]
 
@@ -1247,16 +1279,7 @@ class MentalHealthEngine:
         except Exception:
             pass
 
-        # --- 7. Neural Network (LSTM Severity Analyzer) ---
-        logger.info("Initializing TensorFlow Neural Context Network...")
-        self.tokenizer = Tokenizer(num_words=5000)
-        self.tokenizer.fit_on_texts(intent_texts)
-        self.max_len = 20
-
-        X_seq = self.tokenizer.texts_to_sequences(intent_texts)
-        X_pad = pad_sequences(X_seq, maxlen=self.max_len)
-
-        severity_map = {
+        self.severity_map = {
             "academic_stress": 0.5, "depression_grief": 0.8, "bullying": 0.7,
             "self_esteem": 0.6, "burnout": 0.6, "loneliness": 0.5,
             "general_anxiety": 0.5, "health_anxiety": 0.5,
@@ -1264,23 +1287,48 @@ class MentalHealthEngine:
             "financial_stress": 0.5, "career_anxiety": 0.4,
             "general_chat": 0.1, "seeking_support": 0.3,
         }
-        y_lstm = np.array([severity_map.get(l, 0.4) for l in intent_labels])
 
-        self.lstm_model = Sequential([
-            Embedding(input_dim=5000, output_dim=32, input_length=self.max_len),
-            LSTM(32, return_sequences=False),
-            Dense(16, activation='relu'),
-            Dense(1, activation='sigmoid')
-        ])
-        self.lstm_model.compile(optimizer='adam', loss='mse', metrics=['mae'])
-        self.lstm_model.fit(X_pad, y_lstm, epochs=3, verbose=0)
-        logger.info("Hybrid ML Architecture (Scikit + LSTM + Semantic) Loaded Successfully!")
+        # --- 7. Optional Neural Network (LSTM Severity Analyzer) ---
+        self.lstm_model = None
+        self.tokenizer = None
+        self.max_len = 20
+        if TENSORFLOW_AVAILABLE:
+            logger.info("Initializing TensorFlow Neural Context Network...")
+            self.tokenizer = Tokenizer(num_words=5000)
+            self.tokenizer.fit_on_texts(intent_texts)
+
+            X_seq = self.tokenizer.texts_to_sequences(intent_texts)
+            X_pad = pad_sequences(X_seq, maxlen=self.max_len)
+            y_lstm = np.array([self.severity_map.get(l, 0.4) for l in intent_labels])
+
+            self.lstm_model = Sequential([
+                Embedding(input_dim=5000, output_dim=32, input_length=self.max_len),
+                LSTM(32, return_sequences=False),
+                Dense(16, activation='relu'),
+                Dense(1, activation='sigmoid')
+            ])
+            self.lstm_model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+            self.lstm_model.fit(X_pad, y_lstm, epochs=3, verbose=0)
+            logger.info("Hybrid ML Architecture (Scikit + LSTM + Semantic) Loaded Successfully!")
+        else:
+            logger.warning("TensorFlow unavailable; using deterministic severity fallback: %s", TENSORFLOW_IMPORT_ERROR)
+            logger.info("Hybrid ML Architecture (Scikit + Semantic + Severity Fallback) Loaded Successfully!")
+
+    def _predict_severity(self, text: str, intent: str, intensity: str, semantic_risk_score: float) -> float:
+        if self.lstm_model is not None and self.tokenizer is not None and pad_sequences is not None:
+            seq = self.tokenizer.texts_to_sequences([text])
+            pad_seq = pad_sequences(seq, maxlen=self.max_len)
+            return float(self.lstm_model.predict(pad_seq, verbose=0)[0][0])
+
+        intensity_bonus = {"low": 0.0, "moderate": 0.12, "high": 0.25}.get(intensity, 0.0)
+        base = self.severity_map.get(intent, 0.35)
+        return round(min(max(base + intensity_bonus + (semantic_risk_score * 0.25), 0.0), 1.0), 4)
 
     def process(self, req: ChatRequest, db: Session) -> dict:
         text = req.message
         lang = lang_det.detect(text)
-        lang_key = lang
-        is_first_turn = req.turn == 0
+        lang_key = language_key(lang)
+        is_first_turn = req.turn <= 1
 
         # ── Semantic Understanding ──────────────────────────────────────
         text_embedding = encode_text(text)
@@ -1326,11 +1374,7 @@ class MentalHealthEngine:
 
         ml_mood = self.mood_classifier.predict(vec_input)[0]
         ml_risk_flag = self.risk_classifier.predict(vec_input)[0] == 1
-
-        # LSTM Severity
-        seq = self.tokenizer.texts_to_sequences([text])
-        pad_seq = pad_sequences(seq, maxlen=self.max_len)
-        lstm_score = float(self.lstm_model.predict(pad_seq, verbose=0)[0][0])
+        intensity = emotional_intensity(text)
 
         # ── HYBRID INTENT FUSION ────────────────────────────────────────
         # Combine ML intent + Semantic intent for better accuracy
@@ -1354,8 +1398,9 @@ class MentalHealthEngine:
         rule_score = 3 if rule_crisis else 0
 
         ml_risk_score = 1.0 if ml_risk_flag else 0.0
-        dl_risk_score = lstm_score
         sem_risk_score = semantic_risk["score"]
+        dl_risk_score = self._predict_severity(text, fused_intent, intensity, sem_risk_score)
+        lstm_score = dl_risk_score
 
         # Fused risk level
         if rule_crisis or (sem_risk_score > 0.6 and ml_risk_flag):
@@ -1444,7 +1489,6 @@ class MentalHealthEngine:
 
         # ── Non-crisis processing ──────────────────────────────────────
         cluster_id = int(self.clustering_model.predict(vec_input)[0])
-        intensity = emotional_intensity(text)
         escalation = monitor_escalation(req.session_id, fused_intent, intensity)
 
         # Generate response
@@ -1453,6 +1497,12 @@ class MentalHealthEngine:
             escalation, req.session_id, is_first_turn,
             emotion_trend=emotion_trend,
             semantic_emotion=emotion_match[0]["emotion"] if emotion_match else None,
+        )
+        result["response"] = apply_ethical_guardrails(
+            result["response"],
+            lang_key,
+            text,
+            fused_risk_level,
         )
 
         # ── Update DB ──────────────────────────────────────────────────
