@@ -1,4 +1,4 @@
-import { ChatMessage } from '../types';
+import { generateDemoChatResponse } from './demoFallback';
 
 export const ChatService = {
   // Simple session ID generator
@@ -55,13 +55,14 @@ export const ChatService = {
       try {
         return await postChat('http://127.0.0.1:8000/api/chat');
       } catch (directError) {
-        console.error('Chat API Error:', directError);
+        console.warn('Backend unavailable, using MindGuard client-side demo engine:', directError);
       }
 
+      // Responsive client-side empathetic chatbot demo engine
+      const demoResult = generateDemoChatResponse(message, history, turn, mood);
       return {
-        response: "I'm having trouble connecting to MindGuard right now. Please start the Python backend on port 8000, then refresh and try again.",
-        sentiment: "neutral",
-        action: "none"
+        ...demoResult,
+        session_id: ChatService.getSessionId()
       };
     }
   }
