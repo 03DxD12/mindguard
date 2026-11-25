@@ -64,7 +64,7 @@
   font-weight: 600;
   font-size: 1.05rem;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: background-color 0.2s ease-out, border-color 0.2s ease-out, transform 0.2s ease-out;
   margin-bottom: 2rem;
 }
 
@@ -201,13 +201,13 @@
   border: none;
   color: #a0b3ac;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease-out, color 0.2s ease-out;
 }
 
 .discardBtn:hover {
@@ -301,7 +301,7 @@
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease-out, transform 0.15s ease-out;
   box-shadow: 0 4px 10px rgba(87, 163, 137, 0.2);
 }
 
@@ -352,6 +352,7 @@
   font-size: 0.85rem;
   color: #8b9e97;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .deleteBtn {
@@ -359,12 +360,14 @@
   border: none;
   color: #e59393;
   cursor: pointer;
+  min-width: 40px;
+  min-height: 40px;
   padding: 0.5rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease-out, color 0.2s ease-out;
 }
 
 .deleteBtn:hover {

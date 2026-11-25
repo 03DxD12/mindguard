@@ -11,19 +11,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>(() =>
+    StorageService.get<Theme>(StorageService.KEYS.THEME, 'light')
+  );
 
   useEffect(() => {
-    const savedTheme = StorageService.get<Theme>(StorageService.KEYS.THEME, 'light');
-    setTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  }, []);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     StorageService.set(StorageService.KEYS.THEME, newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
   };
 
   return (

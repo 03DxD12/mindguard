@@ -22,10 +22,11 @@ export const Button: React.FC<ButtonProps> = ({
     <button
       className={`${styles.btn} ${styles[variant]} ${styles[size]} ${isLoading ? styles.loading : ''} ${className || ''}`}
       disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
     >
-      {isLoading && <span className={styles.spinner} />}
-      {!isLoading && leftIcon && <span className={styles.icon}>{leftIcon}</span>}
+      {isLoading && <span className={styles.spinner} aria-hidden="true" />}
+      {!isLoading && leftIcon && <span className={styles.icon} aria-hidden="true">{leftIcon}</span>}
       {children}
     </button>
   );

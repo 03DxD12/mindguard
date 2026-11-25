@@ -7,49 +7,51 @@ export const BreathingExercise: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [phase, setPhase] = useState('Ready');
   const [instruction, setInstruction] = useState('Press Start to begin');
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (isActive) {
-      let step = 0;
-      
-      const cycle = () => {
-        // 4-7-8 Breathing Technique
-        if (step === 0) {
-          setPhase('Inhale');
-          setInstruction('Breathe in through your nose...');
-          timerRef.current = setTimeout(() => { step = 1; cycle(); }, 4000); 
-        } else if (step === 1) {
-          setPhase('Hold');
-          setInstruction('Hold your breath...');
-          timerRef.current = setTimeout(() => { step = 2; cycle(); }, 7000);
-        } else {
-          setPhase('Exhale');
-          setInstruction('Exhale slowly through your mouth...');
-          timerRef.current = setTimeout(() => { step = 0; cycle(); }, 8000);
-        }
-      };
-
-      cycle();
-    } else {
-      setPhase('Ready');
-      setInstruction('Press Start to begin');
+    if (!isActive) {
       if (timerRef.current) clearTimeout(timerRef.current);
+      return;
     }
+
+    let step = 0;
+
+    const cycle = () => {
+      // 4-7-8 Breathing Technique
+      if (step === 0) {
+        setPhase('Inhale');
+        setInstruction('Breathe in through your nose...');
+        timerRef.current = setTimeout(() => { step = 1; cycle(); }, 4000);
+      } else if (step === 1) {
+        setPhase('Hold');
+        setInstruction('Hold your breath...');
+        timerRef.current = setTimeout(() => { step = 2; cycle(); }, 7000);
+      } else {
+        setPhase('Exhale');
+        setInstruction('Exhale slowly through your mouth...');
+        timerRef.current = setTimeout(() => { step = 0; cycle(); }, 8000);
+      }
+    };
+
+    cycle();
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [isActive]);
 
+  const displayPhase = isActive ? phase : 'Ready';
+  const displayInstruction = isActive ? instruction : 'Press Start to begin';
+
   return (
     <div className={styles.container}>
       <Card className={styles.breathingCard}>
-        <div className={`${styles.circle} ${isActive ? styles[phase.toLowerCase()] : ''}`}>
-          <div className={styles.label}>{phase}</div>
+        <div className={`${styles.circle} ${isActive ? styles[displayPhase.toLowerCase()] : ''}`}>
+          <div className={styles.label}>{displayPhase}</div>
         </div>
         
-        <p className={styles.instruction}>{instruction}</p>
+        <p className={styles.instruction} aria-live="polite">{displayInstruction}</p>
         
         <Button 
           variant={isActive ? 'outline' : 'primary'} 

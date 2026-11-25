@@ -16,7 +16,7 @@
   padding: 1.5rem 0;
   flex-shrink: 0;
   z-index: 100;
-  transition: all 0.3s ease;
+  transition: width 0.25s ease-out, transform 0.25s ease-out;
 }
 
 .brand {
@@ -59,7 +59,7 @@
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
   border-left: 3px solid transparent;
   cursor: pointer;
   background: none;
