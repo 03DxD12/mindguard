@@ -4,8 +4,9 @@ import { Card } from '../components/Card';
 import { ChatMessage } from '../types';
 import { ChatService } from '../services/chat';
 import { FaPaperPlane, FaRobot, FaExclamationTriangle } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatedItem } from '../components/AnimatedItem';
+import { useAuth } from '../context/AuthContext';
 import styles from './Chat.module.css';
 
 const INITIAL_MESSAGE: ChatMessage = {
@@ -24,14 +25,19 @@ const ThinkingIndicator = () => (
 );
 
 export const Chat: React.FC = () => {
+  const location = useLocation();
+  const initialMood = (location.state as { mood?: string } | null)?.mood || DEFAULT_MOOD;
+
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [turn, setTurn] = useState(0);
+  const [mood, setMood] = useState(initialMood);
   const [isCrisis, setIsCrisis] = useState(false);
   const [crisisMessageId, setCrisisMessageId] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,7 +66,7 @@ export const Chat: React.FC = () => {
 
     try {
       const history = messages.map(m => m.content);
-      const data = await ChatService.sendMessage(text, history, currentTurn, DEFAULT_MOOD);
+      const data = await ChatService.sendMessage(text, history, currentTurn, mood);
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -94,9 +100,27 @@ export const Chat: React.FC = () => {
       <header className={styles.header}>
         <div>
           <h3>Empathy Companion</h3>
-          <p className={styles.subtitle}>Turn {turn} - Mood: {DEFAULT_MOOD}</p>
+          <p className={styles.subtitle}>
+            Turn {turn}
+            {' — '}
+            <label htmlFor="chat-mood-select" style={{ display: 'inline' }}>Mood:</label>
+            {' '}
+            <select
+              id="chat-mood-select"
+              value={mood}
+              onChange={e => setMood(e.target.value)}
+              style={{
+                border: 'none', background: 'transparent', color: 'var(--primary)',
+                fontWeight: 700, fontSize: 'inherit', cursor: 'pointer', padding: '0 4px',
+              }}
+            >
+              {['Great','Good','Okay','Down','Crisis'].map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </p>
         </div>
-        <span className={styles.statusPill}>Private chat</span>
+        <span className={styles.statusPill} aria-label="Private conversation">Private chat</span>
       </header>
 
       <Card className={styles.chatArea} padding={false}>
@@ -156,11 +180,14 @@ export const Chat: React.FC = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             disabled={isTyping}
+            aria-label="Chat message input"
+            autoComplete="off"
           />
           <Button
             className={styles.sendBtn}
             onClick={() => handleSend()}
             disabled={!input.trim() || isTyping}
+            aria-label="Send message"
           >
             <FaPaperPlane />
           </Button>

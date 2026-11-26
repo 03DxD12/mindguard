@@ -32,7 +32,7 @@ export const Affirmations: React.FC = () => {
         AffirmationService.getDaily(userId),
         AffirmationService.getSaved(userId)
       ]);
-      setCurrent(daily.affirmation);
+      setCurrent(daily.affirmation || daily.text || '');
       setSaved(favorites);
       setSavedTexts(new Set(favorites.map(a => a.text)));
     } catch (e) {
@@ -46,7 +46,7 @@ export const Affirmations: React.FC = () => {
     setIsSpinning(true);
     try {
       const daily = await AffirmationService.getDaily(userId);
-      setCurrent(daily.affirmation);
+      setCurrent(daily.affirmation || daily.text || '');
     } catch (e) {
       console.error(e);
     } finally {
@@ -292,7 +292,8 @@ export const Affirmations: React.FC = () => {
       </AnimatePresence>
 
       <div style={{ marginTop: '28px', textAlign: 'center', fontSize: '11px', color: '#94a3b8', letterSpacing: '0.4px' }}>
-        🔒 All data is encrypted and protected for your privacy.
+        Your saved affirmations are stored on this device and the MindGuard server.
+        Journal content and mood logs are private to your account.
       </div>
     </motion.div>
   );

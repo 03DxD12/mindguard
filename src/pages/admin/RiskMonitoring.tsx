@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FaSync } from "react-icons/fa";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, Legend, CartesianGrid
 } from "recharts";
@@ -131,6 +132,4 @@ export default function RiskMonitoring() {
   );
 }
 
-// Add FaSync import at the top
-import { FaSync } from "react-icons/fa";
 

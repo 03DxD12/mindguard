@@ -34,6 +34,7 @@ export const Dashboard: React.FC = () => {
 
   const [dailyAffirmation, setDailyAffirmation] = useState<string | null>(null);
   const [loadingAffirmation, setLoadingAffirmation] = useState(false);
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
 
   useEffect(() => {
     if (userId) {
@@ -41,10 +42,10 @@ export const Dashboard: React.FC = () => {
     }
   }, [userId]);
 
-  const loadAffirmation = async () => {
+  const loadAffirmation = async (mood?: string) => {
     setLoadingAffirmation(true);
     try {
-      const data = await AffirmationService.getDaily(userId);
+      const data = await AffirmationService.getDaily(userId, mood);
       setDailyAffirmation(data.affirmation);
     } catch (e) {
       console.error(e);
@@ -54,9 +55,10 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleLogMood = async (mood: string) => {
+    setSelectedMood(mood);
     try {
       await WellnessService.logMood(userId, mood);
-      loadAffirmation();
+      loadAffirmation(mood);
     } catch (e) {
       console.error('Failed to log mood', e);
     }
@@ -135,7 +137,15 @@ export const Dashboard: React.FC = () => {
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
-                <button key={action.path} className={styles.actionCard} onClick={() => navigate(action.path)}>
+                <button
+                  key={action.path}
+                  className={styles.actionCard}
+                  onClick={() =>
+                    action.path === '/chat' && selectedMood
+                      ? navigate('/chat', { state: { mood: selectedMood } })
+                      : navigate(action.path)
+                  }
+                >
                   <Icon className={styles.actionIcon} />
                   <span className={styles.actionLabel}>{action.label}</span>
                   <small>{action.detail}</small>

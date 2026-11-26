@@ -7,13 +7,21 @@ export interface SavedAffirmation {
 
 export interface AffirmationResponse {
   affirmation: string;
-  category: string;
-  is_personalized: boolean;
+  category?: string;
+  mood_category?: string;
+  is_personalized?: boolean;
+  text?: string; // some endpoints return `text` as well
 }
 
 export const AffirmationService = {
-  async getDaily(userId: number): Promise<AffirmationResponse> {
-    const res = await fetch(`/api/affirmations/daily/${userId}`);
+  async getDaily(userId: number, mood?: string): Promise<AffirmationResponse> {
+    // Backend endpoint: /api/affirmation/daily?mood=<mood>
+    // Falls back to /api/affirmations/daily/<userId> for demo intercept compatibility
+    const moodParam = mood ? `?mood=${encodeURIComponent(mood)}` : '';
+    const url = userId
+      ? `/api/affirmation/daily${moodParam}`
+      : `/api/affirmation/daily${moodParam}`;
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch daily affirmation');
     return res.json();
   },

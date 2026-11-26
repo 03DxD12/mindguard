@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import styles from "./layout/AdminLayout.module.css";
 import { format } from "date-fns";
 
@@ -18,10 +18,13 @@ interface AlertsPanelProps {
 }
 
 export default function AlertsPanel({ alerts, onReviewed }: AlertsPanelProps) {
+  const [reviewError, setReviewError] = React.useState<string | null>(null);
+
   if (!alerts || alerts.length === 0) return null;
 
   const markReviewed = async (alert: Alert) => {
     if (!alert.id) return;
+    setReviewError(null);
 
     try {
       const res = await fetch(`/api/admin/alerts/${alert.id}/review`, {
@@ -35,16 +38,16 @@ export default function AlertsPanel({ alerts, onReviewed }: AlertsPanelProps) {
       onReviewed?.();
     } catch (error) {
       console.error('Failed to mark alert as reviewed', error);
-      window.alert('Could not mark this alert as reviewed. Please try again.');
+      setReviewError('Could not mark this alert as reviewed. Please try again.');
     }
   };
 
   return (
     <div className={styles.alertsPanel}>
       <h2 className={styles.alertsTitle}>
-        <span role="img" aria-label="alert">⚠️</span> Crisis Alerts Detected ({alerts.length})
+        <span role="img" aria-label="alert">âš ï¸</span> Crisis Alerts Detected ({alerts.length})
       </h2>
-      <div className={styles.alertsList}>
+      {reviewError && <div role="alert" style={{ color: "#b91c1c", backgroundColor: "#fef2f2", padding: "0.5rem 0.75rem", borderRadius: "0.375rem", marginBottom: "0.75rem", fontSize: "0.875rem" }}>{reviewError}</div>}`r`n      <div className={styles.alertsList}>
         {alerts.map((alert, idx) => {
           let formattedTime = alert.timestamp;
           try {
@@ -58,7 +61,7 @@ export default function AlertsPanel({ alerts, onReviewed }: AlertsPanelProps) {
                   <strong>Level {alert.risk_level} Risk</strong> detected in session: <code>{alert.session_id}</code>
                 </div>
                 <div style={{ fontSize: "0.875rem", color: "#b91c1c", marginTop: "0.25rem" }}>
-                  Action Triggered: <strong>{alert.action || "Unknown"}</strong> • Mood: {alert.mood} • {formattedTime}
+                  Action Triggered: <strong>{alert.action || "Unknown"}</strong> â€¢ Mood: {alert.mood} â€¢ {formattedTime}
                 </div>
               </div>
               <button 

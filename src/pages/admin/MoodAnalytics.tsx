@@ -20,6 +20,7 @@ const COLORS: Record<string, string> = {
 
 export default function MoodAnalytics() {
   const [moodData, setMoodData] = useState<any[]>([]);
+  const [trendData, setTrendData] = useState<any[]>([]);
   const [totalEntries, setTotalEntries] = useState(0);
   const [negativeMoodPercentage, setNegativeMoodPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -31,8 +32,11 @@ export default function MoodAnalytics() {
   const fetchMoodData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/admin/mood-analytics");
-      const data = res.data;
+      const [moodRes, trendRes] = await Promise.all([
+        axios.get("/api/admin/mood-analytics"),
+        axios.get("/api/admin/risk-trends?days=7"),
+      ]);
+      const data = moodRes.data;
       
       const chartArr = Object.keys(data).map(key => ({
         name: key,
@@ -51,6 +55,15 @@ export default function MoodAnalytics() {
       if (total > 0) {
         setNegativeMoodPercentage(Math.round((negativeTotal / total) * 100));
       }
+
+      // Map risk trend data to a well-being score (inverted: level_0=5, level_3=1)
+      const rawTrend: any[] = trendRes.data || [];
+      const wellBeingTrend = rawTrend.map((d: any) => {
+        const total = (d.level_0 || 0) + (d.level_1 || 0) + (d.level_2 || 0) + (d.level_3 || 0) || 1;
+        const score = ((d.level_0 || 0) * 5 + (d.level_1 || 0) * 3 + (d.level_2 || 0) * 2 + (d.level_3 || 0) * 1) / total;
+        return { date: d.date?.slice(5) ?? d.date, score: Math.round(score * 10) / 10 };
+      });
+      setTrendData(wellBeingTrend);
     } catch (err) {
       console.error("Failed to fetch mood data", err);
     } finally {
@@ -58,15 +71,7 @@ export default function MoodAnalytics() {
     }
   };
 
-  const trendData = [
-    { date: 'Mon', score: 3.2 },
-    { date: 'Tue', score: 3.4 },
-    { date: 'Wed', score: 3.1 },
-    { date: 'Thu', score: 2.8 },
-    { date: 'Fri', score: 2.9 },
-    { date: 'Sat', score: 3.8 },
-    { date: 'Sun', score: 4.1 },
-  ];
+  // trendData is populated from /api/admin/risk-trends via fetchMoodData
 
   return (
     <div>
@@ -97,7 +102,7 @@ export default function MoodAnalytics() {
       <div className={styles.summaryGrid} style={{ marginBottom: "1.5rem", display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
         <div className={styles.card} style={{ background: '#fff', padding: '1.2rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
           <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 0.5rem 0' }}>Active Population</p>
-          <h4 style={{ fontSize: '1.5rem', margin: 0 }}>{totalEntries}</h4>
+          <h4 style={{ fontSize: '1.5rem', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{totalEntries}</h4>
         </div>
         <div className={styles.card} style={{ background: '#fff', padding: '1.2rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
           <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 0.5rem 0' }}>Most Common State</p>
@@ -105,11 +110,15 @@ export default function MoodAnalytics() {
         </div>
         <div className={styles.card} style={{ background: '#fff', padding: '1.2rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
           <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 0.5rem 0' }}>Distress Ratio</p>
-          <h4 style={{ fontSize: '1.5rem', margin: 0, color: negativeMoodPercentage > 30 ? '#ef4444' : '#f59e0b' }}>{negativeMoodPercentage}%</h4>
+          <h4 style={{ fontSize: '1.5rem', margin: 0, fontVariantNumeric: 'tabular-nums', color: negativeMoodPercentage > 30 ? '#ef4444' : '#f59e0b' }}>{negativeMoodPercentage}%</h4>
         </div>
         <div className={styles.card} style={{ background: '#fff', padding: '1.2rem', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-          <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 0.5rem 0' }}>Improvement Rate</p>
-          <h4 style={{ fontSize: '1.5rem', margin: 0, color: '#10b981' }}>+8.4%</h4>
+          <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 0.5rem 0' }}>7-Day Score Change</p>
+          <h4 style={{ fontSize: '1.5rem', margin: 0, fontVariantNumeric: 'tabular-nums', color: '#0f766e' }}>
+            {trendData.length >= 2 && trendData[0].score > 0
+              ? `${(((trendData[trendData.length - 1].score - trendData[0].score) / trendData[0].score) * 100) >= 0 ? '+' : ''}${(((trendData[trendData.length - 1].score - trendData[0].score) / trendData[0].score) * 100).toFixed(1)}%`
+              : 'N/A'}
+          </h4>
         </div>
       </div>
 
@@ -133,15 +142,21 @@ export default function MoodAnalytics() {
 
         <div className={styles.chartContainer} style={{ background: '#fff', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <h3 style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem', fontWeight: '600' }}>7-DAY AGGREGATE WELL-BEING SCORE</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="date" />
-              <YAxis domain={[0, 5]} />
-              <Tooltip />
-              <Line type="monotone" dataKey="score" stroke="#0f766e" strokeWidth={3} dot={{ r: 4, fill: "#0f766e" }} />
-            </LineChart>
-          </ResponsiveContainer>
+          {trendData.length === 0 ? (
+            <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '0.9rem', textAlign: 'center', padding: '1rem' }}>
+              No 7-day trend data recorded yet.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, 5]} />
+                <Tooltip />
+                <Line type="monotone" dataKey="score" stroke="#0f766e" strokeWidth={3} dot={{ r: 4, fill: "#0f766e" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>

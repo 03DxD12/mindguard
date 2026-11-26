@@ -513,13 +513,65 @@ export function handleDemoApiRequest(
     return demoSystemLogs;
   }
 
-  // 13. Daily Affirmations
+// ── Demo Affirmation Rotation Pool ──────────────────────────────────────────
+const DEMO_AFFIRMATIONS = [
+  "You are capable of amazing things — take it one step at a time.",
+  "Your feelings are valid, and it's okay to ask for help when you need it.",
+  "You have overcome challenges before, and you can do it again.",
+  "You are worthy of love and kindness, starting with yourself.",
+  "Progress, not perfection — celebrate your small wins today.",
+  "You are stronger than your struggles; keep going.",
+  "It's okay to rest and recharge; self-care is a strength.",
+  "You bring unique value to the world — believe in your potential.",
+  "Tough days don't last, but tough people like you do.",
+  "You deserve peace and happiness.",
+  "Every step forward is a victory, no matter how small.",
+  "You are not defined by your mistakes.",
+  "Your journey is unique, and that's what makes you special.",
+  "Breathe deeply; this moment is temporary, and better days are coming.",
+  "You have the power to create positive change in your life.",
+  "You are enough, just as you are right now.",
+  "Your resilience inspires those around you.",
+  "Focus on what you can control, and let go of the rest.",
+  "You are a work in progress, and that's perfectly okay.",
+  "Take pride in how far you've come.",
+];
+
+let _demoAffirmationIndex = -1;
+function getNextDemoAffirmation(): string {
+  _demoAffirmationIndex = (_demoAffirmationIndex + 1) % DEMO_AFFIRMATIONS.length;
+  return DEMO_AFFIRMATIONS[_demoAffirmationIndex];
+}
+
+  // 13. Daily Affirmations — matches /api/affirmation/daily and legacy /api/affirmations/daily/*
   if (cleanUrl.includes('/api/affirmation') || cleanUrl.includes('/api/affirmations')) {
-    return {
-      status: 'success',
-      affirmation: 'You have navigated tough days before, and you possess the inner strength to meet today with patience.',
-      text: 'You have navigated tough days before, and you possess the inner strength to meet today with patience.'
-    };
+    // POST: save affirmation
+    if (normMethod === 'POST' && !cleanUrl.endsWith('/search')) {
+      return {
+        status: 'success',
+        id: Date.now(),
+        text: body?.text || '',
+        created_at: new Date().toISOString(),
+      };
+    }
+    // DELETE: remove saved affirmation
+    if (normMethod === 'DELETE') {
+      return { status: 'success' };
+    }
+    // GET daily affirmation
+    if (normMethod === 'GET' && (cleanUrl.includes('/daily') || cleanUrl.endsWith('/affirmation/daily'))) {
+      const aff = getNextDemoAffirmation();
+      return {
+        status: 'success',
+        affirmation: aff,
+        text: aff,
+        mood_category: 'general',
+      };
+    }
+    // GET saved affirmations list
+    if (normMethod === 'GET') {
+      return [];
+    }
   }
 
   // 14. Mood logs

@@ -66,12 +66,21 @@ export const Login: React.FC = () => {
 
 
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem", marginBottom: "1rem" }}>
-            <span 
-              onClick={() => navigate('/forgot-password')} 
-              style={{ fontSize: "0.875rem", color: "#0f766e", cursor: "pointer", fontWeight: 500 }}
+            <button
+              type="button"
+              onClick={() => navigate('/forgot-password')}
+              style={{
+                background: "none",
+                border: "none",
+                padding: "4px 2px",
+                fontSize: "0.875rem",
+                color: "#0f766e",
+                cursor: "pointer",
+                fontWeight: 500
+              }}
             >
               Forgot Password?
-            </span>
+            </button>
           </div>
 
           <Button type="submit" variant="primary" size="lg" isLoading={isLoading} className="w-full">

@@ -14,7 +14,7 @@ Architecture:
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Tuple
 from collections import defaultdict, deque
 import re
@@ -128,17 +128,17 @@ class UpdatePasswordRequest(BaseModel):
     new_password: str
 
 class CreateAdminRequest(BaseModel):
-    fullname: str
-    email: str
-    role: str
-    password: str
+    fullname: str = Field(..., min_length=1, max_length=150)
+    email: str = Field(..., min_length=3, max_length=254)
+    role: str = Field(..., min_length=1, max_length=80)
+    password: str = Field(..., min_length=6, max_length=128)
 
 class CreateStudentRequest(BaseModel):
-    fullname: str
-    email: str
-    student_id: str
-    program: str
-    password: str
+    fullname: str = Field(..., min_length=1, max_length=150)
+    email: str = Field(..., min_length=3, max_length=254)
+    student_id: str = Field(..., min_length=1, max_length=64)
+    program: str = Field(..., min_length=1, max_length=120)
+    password: str = Field(..., min_length=6, max_length=128)
 
 class UpdateStudentRequest(BaseModel):
     fullname: str
@@ -155,10 +155,10 @@ class LoginRequest(BaseModel):
     password: str
 
 class CreateStaffRequest(BaseModel):
-    fullname: str
-    email: str
+    fullname: str = Field(..., min_length=1, max_length=150)
+    email: str = Field(..., min_length=3, max_length=254)
     role: str  # "Guidance Office" or "Ka-PEER Yu"
-    password: str
+    password: str = Field(..., min_length=6, max_length=128)
     confirm_password: Optional[str] = None
 
 class UpdateStaffRequest(BaseModel):
@@ -167,15 +167,15 @@ class UpdateStaffRequest(BaseModel):
     role: str
 
 class SaveAffirmationRequest(BaseModel):
-    text: str
+    text: str = Field(..., min_length=1, max_length=500)
 
 class MoodLogRequest(BaseModel):
-    mood: str
+    mood: str = Field(..., min_length=1, max_length=40)
     value: int  # 1-5
-    note: Optional[str] = None
+    note: Optional[str] = Field(None, max_length=1000)
 
 class JournalEntryRequest(BaseModel):
-    text: str
+    text: str = Field(..., min_length=1, max_length=10000)
     mood: Optional[str] = None
 
 
@@ -1958,6 +1958,19 @@ def get_daily_affirmation(mood: Optional[str] = None, db: Session = Depends(get_
     db.commit()
 
     return {"affirmation": selected, "mood_category": mood_lower}
+
+
+@app.get("/api/affirmations/daily/{user_id}")
+def get_daily_affirmation_by_user(user_id: int, db: Session = Depends(get_db)):
+    """Mood-aware daily affirmation alias for a specific user."""
+    latest_mood = (
+        db.query(models.MoodLog)
+        .filter(models.MoodLog.user_id == user_id)
+        .order_by(models.MoodLog.timestamp.desc())
+        .first()
+    )
+    mood = latest_mood.mood.lower() if latest_mood else "general"
+    return get_daily_affirmation(mood=mood, db=db)
 
 
 # =============================================================================
